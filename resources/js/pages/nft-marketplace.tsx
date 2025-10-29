@@ -4,6 +4,9 @@ import HeroBanner from '@/components/nft-marketplace/hero-banner';
 import CollectionBanner from '@/components/nft-marketplace/collection-banner';
 import NFTGrid from '@/components/nft-marketplace/nft-grid';
 import { type NFTCardProps } from '@/components/nft-marketplace/nft-card';
+import NFTDetailsModal from '@/components/nft-marketplace/nft-details-modal';
+import { router } from '@inertiajs/react';
+import { useState } from 'react';
 
 // Sample NFT data using real OpenSea image
 const realNFTImage = 'https://i2.seadn.io/hyperevm/0x9125e2d6827a00b0f8330d6ef7bef07730bac685/a95969c6d8d235c4459ed84d1067dd/7da95969c6d8d235c4459ed84d1067dd.png?w=350';
@@ -224,12 +227,18 @@ export default function NFTMarketplace() {
         console.log(`NFT ${id} liked`);
     };
 
+    const [selectedNFT, setSelectedNFT] = useState<typeof sampleNFTs[number] | null>(null);
+    const [detailsOpen, setDetailsOpen] = useState(false);
+
     const handleNFTView = (id: string) => {
-        console.log(`NFT ${id} viewed`);
+        const nft = sampleNFTs.find((n) => n.id === id) || null;
+        setSelectedNFT(nft);
+        setDetailsOpen(true);
     };
 
     const handleNFTPurchase = (id: string) => {
-        console.log(`NFT ${id} purchase initiated`);
+        setDetailsOpen(false);
+        router.visit('/order-confirmation');
     };
 
     return (
@@ -269,6 +278,14 @@ export default function NFTMarketplace() {
                     <div className="h-8"></div>
                 </div>
             </div>
+
+            {/* Details Modal */}
+            <NFTDetailsModal
+                open={detailsOpen}
+                onOpenChange={setDetailsOpen}
+                nft={selectedNFT}
+                onPurchase={handleNFTPurchase}
+            />
         </>
     );
 }
