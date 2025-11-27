@@ -84,6 +84,5 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::put('payment-methods/{paymentMethod}', [\App\Http\Controllers\PaymentMethodController::class, 'update'])->name('payment-methods.update');
     Route::delete('payment-methods/{paymentMethod}', [\App\Http\Controllers\PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
 });
-
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
