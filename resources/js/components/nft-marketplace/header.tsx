@@ -25,7 +25,7 @@ export default function Header({ onLoginClick }: HeaderProps) {
                 {/* Logo */}
                 <div className="flex items-center space-x-2">
                     <div className="h-8 w-8 rounded-full bg-primary glow-primary"></div>
-                    <span className="text-xl font-bold text-foreground text-glow">NFTSELLER</span>
+                    <span className="text-xl font-bold text-foreground text-glow">NFTSeller</span>
                 </div>
 
                 {/* Search Bar - Desktop */}
@@ -78,8 +78,8 @@ export default function Header({ onLoginClick }: HeaderProps) {
                                 key={item.label}
                                 href={item.href}
                                 className={`py-2 lg:py-4 px-2 text-sm font-medium transition-colors hover:text-primary ${item.active
-                                        ? 'text-primary border-b-2 border-primary lg:border-b-2'
-                                        : 'text-muted-foreground'
+                                    ? 'text-primary border-b-2 border-primary lg:border-b-2'
+                                    : 'text-muted-foreground'
                                     }`}
                             >
                                 {item.label}
