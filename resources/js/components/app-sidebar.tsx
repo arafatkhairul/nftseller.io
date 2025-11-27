@@ -15,7 +15,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { type NavItem } from '@/types';
+import { type NavItem, type User } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 import {
@@ -29,11 +29,13 @@ import {
     FaCog,
     FaHistory,
     FaQuestionCircle,
+    FaUsers,
+    FaChartBar,
 } from 'react-icons/fa';
 import AppLogo from './app-logo';
 
-// Main Navigation Items
-const mainNavItems: NavItem[] = [
+// Navigation Items for Regular Users
+const userMainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
@@ -48,36 +50,15 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-// Orders Navigation Items
-const ordersNavItems: NavItem[] = [
+const userOrdersNavItems: NavItem[] = [
     {
-        title: 'My Orders',
-        href: dashboard(),
+        title: 'My Portfolio',
+        href: '/orders',
         icon: FaShoppingBag,
-    },
-    {
-        title: 'Pending Orders',
-        href: dashboard(),
-        icon: FaClock,
-        badge: 12,
-        badgeVariant: 'destructive',
-    },
-    {
-        title: 'Approved Orders',
-        href: dashboard(),
-        icon: FaCheckCircle,
-        badge: 8,
-    },
-    {
-        title: 'Sent Orders',
-        href: dashboard(),
-        icon: FaPaperPlane,
-        badge: 28,
     },
 ];
 
-// Wallet & Settings Items
-const accountNavItems: NavItem[] = [
+const userAccountNavItems: NavItem[] = [
     {
         title: 'Wallet',
         href: dashboard(),
@@ -91,6 +72,51 @@ const accountNavItems: NavItem[] = [
     {
         title: 'Settings',
         href: dashboard(),
+        icon: FaCog,
+    },
+];
+
+// Navigation Items for Admin
+const adminMainNavItems: NavItem[] = [
+    {
+        title: 'Admin Dashboard',
+        href: '/admin/dashboard',
+        icon: FaHome,
+    },
+    {
+        title: 'Analytics',
+        href: '/admin/analytics',
+        icon: FaChartBar,
+    },
+];
+
+const adminManagementNavItems: NavItem[] = [
+    {
+        title: 'Users',
+        href: '/admin/users',
+        icon: FaUsers,
+    },
+    {
+        title: 'Orders',
+        href: '/admin/orders',
+        icon: FaShoppingBag,
+    },
+    {
+        title: 'NFTs',
+        href: '/admin/nfts',
+        icon: FaShoppingBag,
+    },
+    {
+        title: 'Payment Methods',
+        href: '/admin/payment-methods',
+        icon: FaWallet,
+    },
+];
+
+const adminSettingsNavItems: NavItem[] = [
+    {
+        title: 'Settings',
+        href: '/admin/settings',
         icon: FaCog,
     },
 ];
@@ -112,25 +138,40 @@ function NavGroup({
     items: NavItem[];
 }) {
     const page = usePage();
+
+    // Helper function to check if route is active
+    const checkIsActive = (href: string | { url: string }) => {
+        const url = typeof href === 'string' ? href : href.url;
+        const currentPath = page.url;
+
+        // Exact match for root/dashboard
+        if (url === '/' || url === '/dashboard') {
+            return currentPath === '/' || currentPath === '/dashboard';
+        }
+
+        // For other routes, check if current path starts with the href
+        return currentPath.startsWith(url) && currentPath !== '/dashboard' && currentPath !== '/';
+    };
+
     return (
-        <SidebarGroup className="px-2 py-0">
-            <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/60">
+        <SidebarGroup className="px-3 py-2">
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
                 {label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="gap-1">
                     {items.map((item) => {
-                        const isActive = page.url.startsWith(
-                            typeof item.href === 'string'
-                                ? item.href
-                                : item.href.url
-                        );
+                        const isActive = checkIsActive(item.href);
                         return (
                             <SidebarMenuItem key={item.title}>
                                 <SidebarMenuButton
                                     asChild
                                     isActive={isActive}
                                     tooltip={{ children: item.title }}
+                                    className={cn(
+                                        "rounded-xl transition-all duration-200 h-9",
+                                        isActive && "bg-accent font-semibold shadow-sm"
+                                    )}
                                 >
                                     <Link
                                         href={item.href}
@@ -140,19 +181,19 @@ function NavGroup({
                                         {item.icon && (
                                             <item.icon className="h-4 w-4 shrink-0" />
                                         )}
-                                        <span className="font-medium truncate">
+                                        <span className="truncate text-sm">
                                             {item.title}
                                         </span>
                                         {item.badge !== undefined && (
                                             <SidebarMenuBadge
                                                 className={cn(
-                                                    'border',
+                                                    'rounded-full text-[10px] px-2 py-0.5 font-semibold',
                                                     item.badgeVariant === 'destructive' &&
-                                                    'bg-red-500/10 text-red-500 border-red-500/20',
+                                                    'bg-red-500/10 text-red-600 dark:text-red-400',
                                                     item.badgeVariant === 'secondary' &&
-                                                    'bg-neutral-500/10 text-neutral-500 border-neutral-500/20',
+                                                    'bg-neutral-500/10 text-neutral-600 dark:text-neutral-400',
                                                     !item.badgeVariant &&
-                                                    'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                                    'bg-blue-500/10 text-blue-600 dark:text-blue-400'
                                                 )}
                                             >
                                                 {item.badge}
@@ -170,13 +211,21 @@ function NavGroup({
 }
 
 export function AppSidebar() {
+    const page = usePage<{ auth: { user: User } }>();
+    const user = page.props.auth.user;
+    const isAdmin = user.role === 'admin';
+
     return (
-        <Sidebar collapsible="icon" variant="inset" className="border-r border-sidebar-border/70">
-            <SidebarHeader className="border-b border-sidebar-border/70">
+        <Sidebar collapsible="icon" variant="inset" className="border-r border-border bg-card">
+            <SidebarHeader className="border-b border-border p-4">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild className="hover:bg-sidebar-accent/50 transition-colors">
-                            <Link href={dashboard()} prefetch>
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                            className="hover:bg-accent rounded-xl transition-all duration-200 h-12"
+                        >
+                            <Link href={isAdmin ? '/admin/dashboard' : dashboard()} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
@@ -184,13 +233,23 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent className="gap-2">
-                <NavGroup label="Main" items={mainNavItems} />
-                <NavGroup label="Orders" items={ordersNavItems} />
-                <NavGroup label="Account" items={accountNavItems} />
+            <SidebarContent className="gap-0 py-2">
+                {isAdmin ? (
+                    <>
+                        <NavGroup label="Main" items={adminMainNavItems} />
+                        <NavGroup label="Management" items={adminManagementNavItems} />
+                        <NavGroup label="Settings" items={adminSettingsNavItems} />
+                    </>
+                ) : (
+                    <>
+                        <NavGroup label="Main" items={userMainNavItems} />
+                        <NavGroup label="Orders" items={userOrdersNavItems} />
+                        <NavGroup label="Account" items={userAccountNavItems} />
+                    </>
+                )}
             </SidebarContent>
 
-            <SidebarFooter className="border-t border-sidebar-border/70">
+            <SidebarFooter className="border-t border-border p-3">
                 <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>

@@ -11,11 +11,22 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { QRCodeCanvas } from 'qrcode.react';
-import { SiEthereum, SiBitcoin, SiTether } from 'react-icons/si';
-import { FaLink } from 'react-icons/fa';
-import { FiHeart, FiEye, FiShoppingCart, FiCopy, FiCheck, FiArrowLeft } from 'react-icons/fi';
+import { SiEthereum } from 'react-icons/si';
+import { FiHeart, FiEye, FiShoppingCart, FiCheck, FiArrowLeft } from 'react-icons/fi';
 import { type NFTCardProps } from './nft-card';
+import { router } from '@inertiajs/react';
+
+interface PaymentMethodOption {
+    id: number;
+    name: string;
+    description: string | null;
+    icon: string | null;
+    logo_path: string | null;
+    wallet_address: string | null;
+    qr_code: string | null;
+    is_active: boolean;
+    sort_order: number;
+}
 
 export interface NFTDetailsModalProps {
     open: boolean;
@@ -26,16 +37,41 @@ export interface NFTDetailsModalProps {
 
 export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }: NFTDetailsModalProps) {
     const [step, setStep] = useState<1 | 2>(1);
-    const [copiedKey, setCopiedKey] = useState<string | null>(null);
-    const [method, setMethod] = useState<'USDT-TRC20' | 'BTC' | 'USDT-ERC20'>('USDT-TRC20');
+    const [method, setMethod] = useState<string>('');
     const [trxId, setTrxId] = useState<string>("");
-    const [countdown, setCountdown] = useState<number>(15 * 60); // 15 minutes
+    const [countdown, setCountdown] = useState<number>(15 * 60);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>([]);
+    const [loadingMethods, setLoadingMethods] = useState(false);
+
+    // Load payment methods from backend
+    useEffect(() => {
+        const fetchPaymentMethods = async () => {
+            setLoadingMethods(true);
+            try {
+                const response = await fetch('/admin/payment-methods/active');
+                if (response.ok) {
+                    const data = await response.json();
+                    setPaymentMethods(data);
+                    if (data.length > 0) {
+                        setMethod(data[0].name);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load payment methods:', error);
+            } finally {
+                setLoadingMethods(false);
+            }
+        };
+
+        if (open) {
+            fetchPaymentMethods();
+        }
+    }, [open]);
 
     useEffect(() => {
         if (open) {
             setStep(1);
-            setCopiedKey(null);
-            setMethod('USDT-TRC20');
             setTrxId("");
             setCountdown(15 * 60);
         }
@@ -50,7 +86,6 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
         return () => clearInterval(id);
     }, [step]);
 
-    // Always call hooks in the same order: compute price even if nft is not yet provided
     const priceHype = useMemo(() => {
         if (!nft) return '0';
         return (nft.price.eth * 1000).toFixed(0);
@@ -62,6 +97,30 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
         setStep(2);
     };
 
+    const handleConfirmPayment = () => {
+        setIsProcessing(true);
+
+        const orderData = {
+            nft_id: parseInt(nft.id),
+            total_price: nft.price.eth,
+            quantity: 1,
+            payment_method: method,
+            transaction_id: trxId || null,
+        };
+
+        router.post('/orders', orderData, {
+            onSuccess: () => {
+                setIsProcessing(false);
+                onOpenChange(false);
+            },
+            onError: (errors) => {
+                console.error('Order submission error:', errors);
+                setIsProcessing(false);
+                alert('Error placing order. Please try again.');
+            },
+        });
+    };
+
     const traits = [
         { label: 'Background', value: 'Oceanic' },
         { label: 'Accessory', value: 'Goggles' },
@@ -69,55 +128,11 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
         { label: 'Mood', value: 'Chill' },
     ];
 
-    const paymentOptions: Array<{
-        key: 'USDT-TRC20' | 'BTC' | 'USDT-ERC20';
-        label: string;
-        sub?: string;
-        icon: React.ReactNode;
-        address: string; // demo
-    }> = [
-            {
-                key: 'USDT-TRC20',
-                label: 'USDT',
-                sub: 'TRC20 (TRON)',
-                icon: <FaLink className="w-4 h-4 text-red-500" />,
-                address: 'TQ5YgC3P9Yp1xv8m7qF9a2VZQ2q9b1c9dZ',
-            },
-            {
-                key: 'BTC',
-                label: 'BTC',
-                sub: 'Bitcoin',
-                icon: <SiBitcoin className="w-4 h-4 text-orange-400" />,
-                address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-            },
-            {
-                key: 'USDT-ERC20',
-                label: 'USDT',
-                sub: 'ERC20 (Ethereum)',
-                icon: <SiTether className="w-4 h-4 text-emerald-500" />,
-                address: '0xB79b16d2Fd3C5E7C1e92b9cF1A7d0Aa6C9E0a000',
-            },
-        ];
-
-    const selectedOption = paymentOptions.find((p) => p.key === method)!;
-
-    const copyValue = async (value: string, key: string) => {
-        try {
-            await navigator.clipboard.writeText(value);
-            setCopiedKey(key);
-            setTimeout(() => setCopiedKey(null), 1500);
-        } catch (e) {
-            // ignore
-        }
-    };
+    const selectedPaymentMethod = paymentMethods.find((m) => m.name === method);
 
     const formatTime = (total: number) => {
-        const m = Math.floor(total / 60)
-            .toString()
-            .padStart(2, '0');
-        const s = Math.floor(total % 60)
-            .toString()
-            .padStart(2, '0');
+        const m = Math.floor(total / 60).toString().padStart(2, '0');
+        const s = Math.floor(total % 60).toString().padStart(2, '0');
         return `${m}:${s}`;
     };
 
@@ -136,16 +151,14 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                     </div>
                 </div>
 
-                {/* Stepper / Wizard */}
+                {/* Stepper */}
                 <div className="px-6 py-3 border-b border-sidebar-border/70">
                     <div className="flex items-center gap-3">
-                        {/* Step 1 */}
                         <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${step === 1 ? 'bg-blue-500/10 text-blue-500 border border-blue-500/30' : 'text-muted-foreground border border-transparent'}`}>
                             <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs ${step === 1 ? 'bg-blue-500 text-white' : 'bg-muted text-foreground/70'}`}>1</span>
                             <span>Details</span>
                         </div>
                         <div className="h-px flex-1 bg-sidebar-border/70" />
-                        {/* Step 2 */}
                         <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${step === 2 ? 'bg-blue-500/10 text-blue-500 border border-blue-500/30' : 'text-muted-foreground border border-transparent'}`}>
                             <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs ${step === 2 ? 'bg-blue-500 text-white' : 'bg-muted text-foreground/70'}`}>2</span>
                             <span>Payment</span>
@@ -157,7 +170,6 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                     {step === 1 ? (
                         // STEP 1: DETAILS
                         <div className="grid grid-cols-1 md:grid-cols-2">
-                            {/* Left: Image */}
                             <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 p-6 flex items-center justify-center">
                                 <img
                                     src={nft.image}
@@ -167,7 +179,6 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                                 <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-tr from-white/5 via-transparent to-white/10" />
                             </div>
 
-                            {/* Right: Details */}
                             <div className="p-6 space-y-5">
                                 <DialogHeader className="space-y-1">
                                     <DialogTitle className="text-2xl font-semibold tracking-tight">
@@ -178,7 +189,6 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                                     </DialogDescription>
                                 </DialogHeader>
 
-                                {/* Creator */}
                                 <div className="flex items-center gap-3">
                                     <Avatar className="h-8 w-8">
                                         <AvatarFallback>
@@ -191,7 +201,6 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                                     </div>
                                 </div>
 
-                                {/* Price */}
                                 <div className="rounded-xl border border-sidebar-border/70 p-4">
                                     <div className="flex items-end justify-between">
                                         <div className="flex items-end gap-3">
@@ -209,13 +218,8 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                                             ≈ ${nft.price.usd.toLocaleString()}
                                         </div>
                                     </div>
-                                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                                        <div className="flex items-center justify-between"><span>Last sale</span><span className="text-foreground font-medium">{(nft.price.eth * 900).toFixed(0)} HYPE</span></div>
-                                        <div className="flex items-center justify-between"><span>24h change</span><span className="text-emerald-500 font-medium">+{(Math.random() * 15 + 2).toFixed(1)}%</span></div>
-                                    </div>
                                 </div>
 
-                                {/* Traits */}
                                 <div>
                                     <div className="mb-2 text-sm font-medium">Properties</div>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -228,12 +232,10 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                                     </div>
                                 </div>
 
-                                {/* Description */}
                                 <div className="text-sm text-muted-foreground leading-relaxed">
-                                    Verified collection item. Ownership transfers immediately on purchase. Gas and platform fee are calculated at checkout. All sales are final.
+                                    Verified collection item. Ownership transfers immediately on purchase. All sales are final.
                                 </div>
 
-                                {/* CTAs */}
                                 <DialogFooter className="gap-2 pt-1">
                                     <Button variant="secondary" onClick={() => onOpenChange(false)}>Close</Button>
                                     <Button onClick={handleBuy} className="gap-2">
@@ -245,32 +247,45 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                     ) : (
                         // STEP 2: PAYMENT
                         <div className="grid grid-cols-1 lg:grid-cols-5">
-                            {/* Payment methods */}
                             <div className="lg:col-span-2 border-r border-sidebar-border/70 p-6 space-y-3">
                                 <div className="text-lg font-semibold">Select Payment Method</div>
-                                <div className="space-y-2">
-                                    {paymentOptions.map((opt) => (
-                                        <button
-                                            key={opt.key}
-                                            onClick={() => setMethod(opt.key)}
-                                            className={`w-full text-left rounded-lg border px-4 py-3 transition-colors ${method === opt.key
-                                                ? 'border-blue-500/40 bg-blue-500/10'
-                                                : 'border-sidebar-border/70 hover:bg-muted/50'
-                                                }`}
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    {opt.icon}
-                                                    <div className="font-medium">{opt.label}</div>
-                                                    {opt.sub && (
-                                                        <div className="text-xs text-muted-foreground">{opt.sub}</div>
-                                                    )}
+                                {loadingMethods ? (
+                                    <div className="text-sm text-muted-foreground">Loading payment methods...</div>
+                                ) : paymentMethods.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {paymentMethods.map((pm) => (
+                                            <button
+                                                key={pm.id}
+                                                onClick={() => setMethod(pm.name)}
+                                                className={`w-full text-left rounded-lg border px-4 py-3 transition-colors ${method === pm.name
+                                                    ? 'border-blue-500/40 bg-blue-500/10'
+                                                    : 'border-sidebar-border/70 hover:bg-muted/50'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                        {pm.logo_path && (
+                                                            <img
+                                                                src={`/storage/${pm.logo_path}`}
+                                                                alt={pm.name}
+                                                                className="w-10 h-10 rounded object-cover flex-shrink-0"
+                                                            />
+                                                        )}
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="font-medium">{pm.name}</div>
+                                                            {pm.description && (
+                                                                <div className="text-xs text-muted-foreground truncate">{pm.description}</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {method === pm.name && <FiCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />}
                                                 </div>
-                                                {method === opt.key && <FiCheck className="w-4 h-4 text-blue-500" />}
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-sm text-muted-foreground">No payment methods available</div>
+                                )}
 
                                 <div className="pt-4">
                                     <Button variant="ghost" className="gap-2" onClick={() => setStep(1)}>
@@ -279,7 +294,6 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                                 </div>
                             </div>
 
-                            {/* Payment summary */}
                             <div className="lg:col-span-3 p-6 space-y-5 overflow-y-auto">
                                 <DialogHeader className="space-y-1">
                                     <div className="flex items-center justify-between">
@@ -296,7 +310,6 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                                     </DialogDescription>
                                 </DialogHeader>
 
-                                {/* Price recap */}
                                 <div className="rounded-xl border border-sidebar-border/70 p-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -309,59 +322,67 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                                     </div>
                                 </div>
 
-                                {/* Address, QR & amount */
-                                }
-                                <div className="rounded-xl border border-sidebar-border/70 p-4 space-y-4">
-                                    <div className="text-sm font-medium">Send payment to this address</div>
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <div className="rounded-md border border-sidebar-border/70 px-3 py-2 flex-1 truncate">
-                                            {selectedOption.address}
-                                        </div>
-                                        <Button
-                                            variant="secondary"
-                                            className="gap-2"
-                                            onClick={() => copyValue(selectedOption.address, 'addr')}
-                                        >
-                                            <FiCopy className="w-4 h-4" />
-                                            {copiedKey === 'addr' ? 'Copied' : 'Copy'}
-                                        </Button>
-                                    </div>
-
-                                    {/* QR Code */}
-                                    <div className="flex items-center gap-4">
-                                        <div className="rounded-lg border border-sidebar-border/70 p-3 bg-background">
-                                            <QRCodeCanvas value={selectedOption.address} size={144} level="M" includeMargin className="rounded-md" />
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            Scan this QR with your wallet app to auto-fill the address. Double-check network matches the selected method to avoid loss of funds.
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-3 text-sm">
-                                        <div>
-                                            <div className="text-muted-foreground mb-1">Network</div>
-                                            <div className="rounded-md border border-sidebar-border/70 px-3 py-2 inline-flex items-center gap-2">
-                                                {selectedOption.icon}
-                                                <span className="font-medium">{selectedOption.sub ?? selectedOption.label}</span>
+                                {selectedPaymentMethod ? (
+                                    <div className="rounded-xl border border-sidebar-border/70 p-4 space-y-4">
+                                        {/* Payment method header with logo */}
+                                        <div className="flex items-center gap-3">
+                                            {selectedPaymentMethod.logo_path && (
+                                                <img
+                                                    src={`/storage/${selectedPaymentMethod.logo_path}`}
+                                                    alt={selectedPaymentMethod.name}
+                                                    className="w-12 h-12 rounded-lg object-cover"
+                                                />
+                                            )}
+                                            <div>
+                                                <div className="text-sm font-medium">{selectedPaymentMethod.name}</div>
+                                                {selectedPaymentMethod.description && (
+                                                    <div className="text-xs text-muted-foreground">{selectedPaymentMethod.description}</div>
+                                                )}
                                             </div>
                                         </div>
-                                        <div>
-                                            <div className="text-muted-foreground mb-1">Amount (USD approx)</div>
-                                            <div className="rounded-md border border-sidebar-border/70 px-3 py-2 font-medium">
-                                                ${nft.price.usd.toLocaleString()}
+
+                                        {/* Amount */}
+                                        <div className="grid grid-cols-2 gap-3 text-sm">
+                                            <div>
+                                                <div className="text-muted-foreground mb-1">Amount (ETH)</div>
+                                                <div className="rounded-md border border-sidebar-border/70 px-3 py-2 font-medium">
+                                                    {nft.price.eth.toFixed(4)} ETH
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-muted-foreground mb-1">Amount (USD)</div>
+                                                <div className="rounded-md border border-sidebar-border/70 px-3 py-2 font-medium">
+                                                    ${nft.price.usd.toLocaleString()}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* TRX ID input for manual confirmation */}
-                                    {method === 'USDT-TRC20' && (
+                                        {/* QR Code and Wallet Address */}
+                                        {selectedPaymentMethod.qr_code && selectedPaymentMethod.wallet_address && (
+                                            <div className="space-y-3">
+                                                <div className="text-sm font-medium">Send to this address</div>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="rounded-lg border border-sidebar-border/70 p-2 bg-background flex-shrink-0">
+                                                        <div dangerouslySetInnerHTML={{ __html: selectedPaymentMethod.qr_code }} />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 text-xs">
+                                                        <div className="text-muted-foreground mb-2 font-medium">Wallet Address:</div>
+                                                        <div className="break-all font-mono text-foreground bg-muted p-2 rounded">
+                                                            {selectedPaymentMethod.wallet_address}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Transaction ID */}
                                         <div className="grid gap-2">
-                                            <div className="text-sm font-medium">TRX Transaction ID</div>
+                                            <div className="text-sm font-medium">Transaction ID</div>
                                             <div className="flex items-center gap-2">
                                                 <Input
                                                     value={trxId}
                                                     onChange={(e) => setTrxId(e.target.value)}
-                                                    placeholder="Enter your TRX transaction hash"
+                                                    placeholder="Enter your transaction hash"
                                                     className="flex-1"
                                                 />
                                                 <Button
@@ -376,19 +397,27 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                                                     Paste
                                                 </Button>
                                             </div>
-                                            <div className="text-xs text-muted-foreground">We will verify this ID to confirm your payment manually. Ensure you paste the exact transaction hash.</div>
+                                            <div className="text-xs text-muted-foreground">Enter your transaction hash for payment verification.</div>
                                         </div>
-                                    )}
 
-                                    <div className="text-xs text-muted-foreground">
-                                        Note: After sending the exact amount, your order will be confirmed automatically. Network fees apply.
+                                        <div className="text-xs text-muted-foreground">
+                                            Your order will be confirmed after payment verification. Network fees may apply.
+                                        </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="rounded-xl border border-sidebar-border/70 p-4 text-center text-muted-foreground">
+                                        Please select a payment method
+                                    </div>
+                                )}
 
                                 <DialogFooter className="gap-2 pt-1">
-                                    <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-                                    <Button className="gap-2" onClick={() => onPurchase?.(nft.id)} disabled={method === 'USDT-TRC20' && trxId.trim().length < 8}>
-                                        Confirm Payment
+                                    <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isProcessing}>Cancel</Button>
+                                    <Button
+                                        className="gap-2"
+                                        onClick={handleConfirmPayment}
+                                        disabled={isProcessing || !selectedPaymentMethod || trxId.trim().length < 8}
+                                    >
+                                        {isProcessing ? 'Processing...' : 'Confirm Payment'}
                                     </Button>
                                 </DialogFooter>
                             </div>

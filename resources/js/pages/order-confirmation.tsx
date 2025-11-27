@@ -5,7 +5,24 @@ import { Head, Link } from '@inertiajs/react';
 import { FaCheckCircle, FaClock, FaUser } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 
-export default function OrderConfirmation() {
+interface Order {
+    id: number;
+    order_number: string;
+    nft_name: string;
+    nft_image: string | null;
+    total_price: string;
+    quantity: string;
+    payment_method: string;
+    transaction_id: string | null;
+    status: string;
+    created_at: string;
+}
+
+interface Props {
+    order?: Order;
+}
+
+export default function OrderConfirmation({ order }: Props) {
     const [countdown, setCountdown] = useState(5);
     const [showRedirectMessage, setShowRedirectMessage] = useState(false);
 
@@ -33,10 +50,25 @@ export default function OrderConfirmation() {
         }
     }, [countdown, showRedirectMessage]);
 
-    const orderDetails = {
+    // Use actual order data or fallback to mock data
+    const orderDetails = order ? {
+        orderId: order.order_number,
+        nftName: order.nft_name,
+        nftImage: order.nft_image,
+        totalAmount: `${order.total_price} ETH`,
+        itemsCount: parseInt(order.quantity),
+        paymentMethod: order.payment_method,
+        transactionId: order.transaction_id,
+        estimatedTime: "5-10 minutes",
+        date: order.created_at,
+    } : {
         orderId: "#NFT-2024-7890",
+        nftName: "Unknown NFT",
+        nftImage: null,
         totalAmount: "1.25 ETH",
-        itemsCount: 3,
+        itemsCount: 1,
+        paymentMethod: "crypto",
+        transactionId: null,
         estimatedTime: "5-10 minutes",
         date: new Date().toLocaleDateString('en-US', {
             year: 'numeric',
@@ -89,6 +121,22 @@ export default function OrderConfirmation() {
                                         <h3 className="mb-4 text-base font-medium text-white">
                                             Order Summary
                                         </h3>
+
+                                        {/* NFT Details */}
+                                        {orderDetails.nftImage && (
+                                            <div className="mb-4 flex items-center gap-3 rounded-lg bg-slate-700/30 p-3">
+                                                <img
+                                                    src={orderDetails.nftImage}
+                                                    alt={orderDetails.nftName}
+                                                    className="h-16 w-16 rounded object-cover"
+                                                />
+                                                <div>
+                                                    <p className="text-sm text-gray-400">NFT</p>
+                                                    <p className="font-medium text-white">{orderDetails.nftName}</p>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <div className="space-y-2 text-sm">
                                             <div className="flex justify-between items-center py-1">
                                                 <span className="text-gray-500">Order ID</span>
@@ -99,9 +147,15 @@ export default function OrderConfirmation() {
                                                 <span className="font-medium text-violet-400">{orderDetails.totalAmount}</span>
                                             </div>
                                             <div className="flex justify-between items-center py-1">
-                                                <span className="text-gray-500">Items</span>
-                                                <span className="text-white">{orderDetails.itemsCount} NFTs</span>
+                                                <span className="text-gray-500">Payment Method</span>
+                                                <span className="text-white capitalize">{orderDetails.paymentMethod}</span>
                                             </div>
+                                            {orderDetails.transactionId && (
+                                                <div className="flex justify-between items-center py-1">
+                                                    <span className="text-gray-500">Transaction ID</span>
+                                                    <span className="font-mono text-xs text-white">{orderDetails.transactionId}</span>
+                                                </div>
+                                            )}
                                             <div className="flex justify-between items-center py-1">
                                                 <span className="text-gray-500">Date & Time</span>
                                                 <span className="text-white">{orderDetails.date}</span>

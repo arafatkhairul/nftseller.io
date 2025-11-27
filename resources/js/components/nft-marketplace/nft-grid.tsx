@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import NFTCard, { type NFTCardProps } from './nft-card';
+import NFTCardSkeleton from './nft-card-skeleton';
 
 interface NFTGridProps {
     title?: string;
@@ -16,6 +17,7 @@ interface NFTGridProps {
         lg?: number;
         xl?: number;
     };
+    isLoading?: boolean;
 }
 
 export default function NFTGrid({
@@ -27,10 +29,14 @@ export default function NFTGrid({
     onNFTView,
     onNFTPurchase,
     className = "",
-    gridCols = { sm: 1, md: 2, lg: 4, xl: 4 }
+    gridCols = { sm: 1, md: 2, lg: 4, xl: 4 },
+    isLoading = false
 }: NFTGridProps) {
     // Fixed grid classes for 5 columns on desktop with minimal spacing
     const gridClasses = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2";
+
+    // Generate skeleton loaders (10 items by default)
+    const skeletonCount = 10;
 
     return (
         <section className={`py-3 max-w-full ${className}`}>
@@ -39,7 +45,7 @@ export default function NFTGrid({
                 <h2 className="text-xl md:text-2xl font-bold text-foreground">
                     {title}
                 </h2>
-                {showSeeAll && (
+                {showSeeAll && !isLoading && (
                     <Button
                         variant="ghost"
                         onClick={onSeeAll}
@@ -51,7 +57,13 @@ export default function NFTGrid({
             </div>
 
             {/* NFT Grid */}
-            {nfts.length > 0 ? (
+            {isLoading ? (
+                <div className={`${gridClasses} w-full max-w-full`}>
+                    {Array.from({ length: skeletonCount }).map((_, index) => (
+                        <NFTCardSkeleton key={`skeleton-${index}`} />
+                    ))}
+                </div>
+            ) : nfts.length > 0 ? (
                 <div className={`${gridClasses} w-full max-w-full`}>
                     {nfts.map((nft) => (
                         <NFTCard

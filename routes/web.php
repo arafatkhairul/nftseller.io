@@ -3,27 +3,86 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('nft-marketplace');
-})->name('home');
+Route::get('/', [\App\Http\Controllers\NftController::class, 'index'])->name('home');
 
 Route::get('/welcome', function () {
     return Inertia::render('welcome');
 })->name('welcome');
 
-Route::get('/nft-marketplace', function () {
-    return Inertia::render('nft-marketplace');
-})->name('nft-marketplace');
+Route::get('/nft-marketplace', [\App\Http\Controllers\NftController::class, 'index'])->name('nft-marketplace');
+
+// Public API routes
+Route::get('/admin/payment-methods/active', [\App\Http\Controllers\PaymentMethodController::class, 'getActive']);
 
 // Order confirmation screen after manual payment submission
 Route::get('/order-confirmation', function () {
-    return Inertia::render('order-confirmation');
+    // Get order from session flash data
+    $order = session('order');
+
+    return Inertia::render('order-confirmation', [
+        'order' => $order,
+    ]);
 })->name('order-confirmation');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        $orders = auth()->user()->orders()
+            ->with('nft')
+            ->latest()
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'nft_id' => $order->nft_id,
+                    'nft_name' => $order->nft->name ?? 'Unknown',
+                    'nft_image' => $order->nft->image_path ? asset('storage/' . $order->nft->image_path) : null,
+                    'total_price' => $order->total_price,
+                    'quantity' => $order->quantity,
+                    'payment_method' => $order->payment_method,
+                    'transaction_id' => $order->transaction_id,
+                    'status' => $order->status,
+                    'created_at' => $order->created_at->format('Y-m-d H:i'),
+                    'created_at_diff' => $order->created_at->diffForHumans(),
+                ];
+            });
+
+        $completedOrdersTotal = auth()->user()->orders()
+            ->where('status', 'completed')
+            ->sum('total_price');
+
+        return Inertia::render('dashboard', [
+            'orders' => $orders,
+            'completedOrdersTotal' => $completedOrdersTotal,
+        ]);
     })->name('dashboard');
+
+    // User Orders Routes
+    Route::get('orders', [\App\Http\Controllers\OrderController::class, 'userOrders'])->name('orders.index');
+    Route::post('orders', [\App\Http\Controllers\OrderController::class, 'store'])->name('orders.store');
+    Route::get('orders/{order}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
+});
+
+// Admin Routes
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('dashboard', [\App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('analytics', [\App\Http\Controllers\AdminController::class, 'analytics'])->name('analytics');
+    Route::get('users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users');
+    Route::get('orders', [\App\Http\Controllers\OrderController::class, 'adminOrders'])->name('orders');
+    Route::patch('orders/{order}/status', [\App\Http\Controllers\OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+    Route::get('settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
+
+    // NFT Management Routes
+    Route::get('nfts', [\App\Http\Controllers\NftController::class, 'manage'])->name('nfts.manage');
+    Route::post('nfts', [\App\Http\Controllers\NftController::class, 'store'])->name('nfts.store');
+    Route::put('nfts/{nft}', [\App\Http\Controllers\NftController::class, 'update'])->name('nfts.update');
+    Route::delete('nfts/{nft}', [\App\Http\Controllers\NftController::class, 'destroy'])->name('nfts.destroy');
+
+    // Payment Methods Routes
+    Route::get('payment-methods', [\App\Http\Controllers\PaymentMethodController::class, 'index'])->name('payment-methods.index');
+    Route::post('payment-methods', [\App\Http\Controllers\PaymentMethodController::class, 'store'])->name('payment-methods.store');
+    Route::put('payment-methods/{paymentMethod}', [\App\Http\Controllers\PaymentMethodController::class, 'update'])->name('payment-methods.update');
+    Route::delete('payment-methods/{paymentMethod}', [\App\Http\Controllers\PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
 });
 
 require __DIR__ . '/settings.php';

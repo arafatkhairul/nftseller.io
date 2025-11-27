@@ -6,19 +6,19 @@ import NFTGrid from '@/components/nft-marketplace/nft-grid';
 import { type NFTCardProps } from '@/components/nft-marketplace/nft-card';
 import NFTDetailsModal from '@/components/nft-marketplace/nft-details-modal';
 import { router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Sample NFT data using real OpenSea image
 const realNFTImage = 'https://i2.seadn.io/hyperevm/0x9125e2d6827a00b0f8330d6ef7bef07730bac685/a95969c6d8d235c4459ed84d1067dd/7da95969c6d8d235c4459ed84d1067dd.png?w=350';
 
-// Multiple collections data
+// Multiple collections data with Vercel-style dark professional images
 const collectionsData = [
     {
         id: "good-vibes-club",
         title: "Good Vibes Club",
         creator: "GVC_Official",
         isVerified: true,
-        backgroundImage: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80",
+        backgroundImage: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
         stats: {
             floorPrice: { eth: 0.592 },
             items: 6968,
@@ -36,7 +36,7 @@ const collectionsData = [
         title: "CryptoPunks",
         creator: "LarvaLabs",
         isVerified: true,
-        backgroundImage: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
+        backgroundImage: "https://images.unsplash.com/photo-1639322537228-f710d846310a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
         stats: {
             floorPrice: { eth: 45.2 },
             items: 10000,
@@ -54,7 +54,7 @@ const collectionsData = [
         title: "Bored Ape Yacht Club",
         creator: "Yuga Labs",
         isVerified: true,
-        backgroundImage: "https://images.unsplash.com/photo-1634973357973-f2ed2657db3c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
+        backgroundImage: "https://images.unsplash.com/photo-1618172193763-c511deb635ca?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
         stats: {
             floorPrice: { eth: 12.8 },
             items: 10000,
@@ -72,7 +72,7 @@ const collectionsData = [
         title: "Azuki",
         creator: "Chiru Labs",
         isVerified: true,
-        backgroundImage: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
+        backgroundImage: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
         stats: {
             floorPrice: { eth: 3.45 },
             items: 10000,
@@ -90,7 +90,7 @@ const collectionsData = [
         title: "Doodles",
         creator: "Doodles LLC",
         isVerified: true,
-        backgroundImage: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
+        backgroundImage: "https://images.unsplash.com/photo-1535223289827-42f1e9919769?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
         stats: {
             floorPrice: { eth: 2.1 },
             items: 10000,
@@ -209,7 +209,49 @@ const sampleNFTs: Omit<NFTCardProps, 'onLike' | 'onView' | 'onPurchase'>[] = [
 ];
 
 
-export default function NFTMarketplace() {
+interface DatabaseNFT {
+    id: number;
+    name: string;
+    image_url: string;
+    price: string;
+    creator?: {
+        id: number;
+        name: string;
+    };
+    views: number;
+    likes: number;
+}
+
+export default function NFTMarketplace({ nfts: dbNfts = [] }: { nfts?: DatabaseNFT[] }) {
+    // Loading state management
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedNFT, setSelectedNFT] = useState<any | null>(null);
+    const [detailsOpen, setDetailsOpen] = useState(false);
+
+    // Convert database NFTs to component format
+    const convertedNFTs = dbNfts.length > 0
+        ? dbNfts.map((nft) => ({
+            id: String(nft.id),
+            name: nft.name,
+            image: nft.image_url,
+            price: { eth: parseFloat(String(nft.price)), usd: parseFloat(String(nft.price)) * 2500 },
+            creator: nft.creator?.name || 'Unknown Creator',
+            likes: nft.likes,
+            views: nft.views,
+            isLiked: false
+        }))
+        : sampleNFTs;
+
+    // Simulate data loading with a delay (in real scenario, data comes from server)
+    useEffect(() => {
+        // Set a minimum loading time of 600ms to show skeleton animation
+        const loadingTimer = setTimeout(() => {
+            setIsLoading(false);
+        }, 600);
+
+        return () => clearTimeout(loadingTimer);
+    }, [dbNfts]);
+
     const handleLogin = () => {
         // Navigate to login page
         window.location.href = '/login';
@@ -227,11 +269,8 @@ export default function NFTMarketplace() {
         console.log(`NFT ${id} liked`);
     };
 
-    const [selectedNFT, setSelectedNFT] = useState<typeof sampleNFTs[number] | null>(null);
-    const [detailsOpen, setDetailsOpen] = useState(false);
-
     const handleNFTView = (id: string) => {
-        const nft = sampleNFTs.find((n) => n.id === id) || null;
+        const nft = convertedNFTs.find((n) => n.id === id) || null;
         setSelectedNFT(nft);
         setDetailsOpen(true);
     };
@@ -264,13 +303,14 @@ export default function NFTMarketplace() {
                     {/* NFT Grid */}
                     <div className="w-full">
                         <NFTGrid
-                            title="NFTS"
-                            nfts={sampleNFTs}
+                            title={dbNfts.length > 0 && !isLoading ? "Featured NFTs" : "NFTS"}
+                            nfts={convertedNFTs}
                             showSeeAll={true}
                             onSeeAll={handleSeeAll}
                             onNFTLike={handleNFTLike}
                             onNFTView={handleNFTView}
                             onNFTPurchase={handleNFTPurchase}
+                            isLoading={isLoading}
                         />
                     </div>
 

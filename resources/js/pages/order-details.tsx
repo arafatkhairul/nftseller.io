@@ -1,0 +1,168 @@
+import { Head, Link } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FiClock, FiCheckCircle, FiX } from 'react-icons/fi';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+
+interface Order {
+    id: number;
+    order_number: string;
+    nft_id: number;
+    nft_name: string;
+    nft_image: string | null;
+    total_price: string;
+    quantity: string;
+    payment_method: string;
+    transaction_id: string | null;
+    status: string;
+    user_name: string;
+    user_email: string;
+    created_at: string;
+}
+
+interface Props {
+    order: Order;
+}
+
+const statusConfig = {
+    pending: { color: 'bg-yellow-500/10 text-yellow-700 border-yellow-200', icon: FiClock, label: 'Pending', description: 'Your order is being processed' },
+    completed: { color: 'bg-green-500/10 text-green-700 border-green-200', icon: FiCheckCircle, label: 'Completed', description: 'Order completed successfully' },
+    cancelled: { color: 'bg-red-500/10 text-red-700 border-red-200', icon: FiX, label: 'Cancelled', description: 'Order has been cancelled' },
+    failed: { color: 'bg-red-500/10 text-red-700 border-red-200', icon: FiX, label: 'Failed', description: 'Order failed to process' },
+};
+
+export default function OrderDetails({ order }: Props) {
+    const config = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.pending;
+    const StatusIcon = config.icon;
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'My Orders',
+            href: '/orders',
+        },
+        {
+            title: `Order ${order.order_number}`,
+            href: `/orders/${order.id}`,
+        },
+    ];
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title={`Order ${order.order_number}`} />
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h1 className="text-3xl font-bold text-foreground">Order Details</h1>
+                        <p className="text-muted-foreground mt-1">Order #{order.order_number}</p>
+                    </div>
+                    <Badge className={`${config.color} border flex items-center gap-2 py-2 px-4`}>
+                        <StatusIcon className="w-4 h-4" />
+                        <span>{config.label}</span>
+                    </Badge>
+                </div>
+
+                {/* Main Content */}
+                <div className="space-y-6">
+                    {/* Status Description */}
+                    <Card className="border-sidebar-border/70">
+                        <CardContent className="pt-6">
+                            <div className="flex items-center gap-4">
+                                <div className={`p-3 rounded-lg ${config.color}`}>
+                                    <StatusIcon className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-foreground">{config.label}</h3>
+                                    <p className="text-sm text-muted-foreground">{config.description}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* NFT Details */}
+                    <Card className="border-sidebar-border/70">
+                        <CardHeader>
+                            <CardTitle className="text-lg">NFT Details</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex gap-6">
+                                {order.nft_image && (
+                                    <div className="w-32 h-32 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                        <img
+                                            src={order.nft_image}
+                                            alt={order.nft_name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                )}
+                                <div className="flex-1 space-y-3">
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">NFT Name</p>
+                                        <p className="text-lg font-semibold text-foreground">{order.nft_name}</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Quantity</p>
+                                            <p className="font-semibold text-foreground">{order.quantity}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Unit Price</p>
+                                            <p className="font-semibold text-foreground">{order.total_price} ETH</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Order Summary */}
+                    <Card className="border-sidebar-border/70">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Order Summary</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex justify-between items-center py-3 border-b border-sidebar-border/50">
+                                <span className="text-muted-foreground">Order ID</span>
+                                <span className="font-mono font-semibold text-foreground">{order.order_number}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-3 border-b border-sidebar-border/50">
+                                <span className="text-muted-foreground">Total Amount</span>
+                                <span className="text-lg font-semibold text-emerald-500">{order.total_price} ETH</span>
+                            </div>
+                            <div className="flex justify-between items-center py-3 border-b border-sidebar-border/50">
+                                <span className="text-muted-foreground">Payment Method</span>
+                                <span className="font-semibold text-foreground capitalize">{order.payment_method}</span>
+                            </div>
+                            {order.transaction_id && (
+                                <div className="flex justify-between items-center py-3 border-b border-sidebar-border/50">
+                                    <span className="text-muted-foreground">Transaction ID</span>
+                                    <span className="font-mono text-sm text-foreground break-all">{order.transaction_id}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between items-center py-3">
+                                <span className="text-muted-foreground">Order Date</span>
+                                <span className="font-semibold text-foreground">{order.created_at}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 flex-wrap">
+                        <Link href="/orders" className="flex-1 min-w-[200px]">
+                            <Button variant="outline" className="w-full">
+                                Back to Orders
+                            </Button>
+                        </Link>
+                        <Link href="/nft-marketplace" className="flex-1 min-w-[200px]">
+                            <Button className="w-full">
+                                Continue Shopping
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        </AppLayout>
+    );
+}

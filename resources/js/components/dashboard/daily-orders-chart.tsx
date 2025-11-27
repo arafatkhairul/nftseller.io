@@ -22,54 +22,68 @@ const data = [
 export default function DailyOrdersChart() {
     return (
         <div className="h-full w-full">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={320}>
                 <BarChart
                     data={data}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
                     <CartesianGrid
-                        strokeDasharray="3 3"
-                        className="stroke-sidebar-border/50"
+                        strokeDasharray="0"
+                        vertical={false}
+                        stroke="hsl(var(--border))"
+                        strokeOpacity={0.3}
                     />
                     <XAxis
                         dataKey="day"
-                        className="text-xs text-muted-foreground"
-                        tick={{ fill: 'currentColor' }}
-                        axisLine={{ stroke: 'currentColor' }}
+                        className="text-xs"
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
                     />
                     <YAxis
-                        className="text-xs text-muted-foreground"
-                        tick={{ fill: 'currentColor' }}
-                        axisLine={{ stroke: 'currentColor' }}
+                        className="text-xs"
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
                     />
                     <Tooltip
+                        cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
                         contentStyle={{
                             backgroundColor: 'hsl(var(--card))',
                             border: '1px solid hsl(var(--border))',
                             borderRadius: '0.5rem',
                             color: 'hsl(var(--foreground))',
+                            fontSize: '12px',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                         }}
-                        labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
+                        labelStyle={{
+                            color: 'hsl(var(--muted-foreground))',
+                            fontWeight: 600,
+                            marginBottom: '4px'
+                        }}
                     />
                     <Legend
-                        wrapperStyle={{ paddingTop: '1rem' }}
+                        wrapperStyle={{ paddingTop: '1rem', fontSize: '12px' }}
                         iconType="circle"
                     />
                     <Bar
                         dataKey="orders"
-                        fill="#3b82f6"
+                        fill="hsl(var(--chart-1))"
                         name="New Orders"
-                        radius={[8, 8, 0, 0]}
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={60}
                     />
                     <Bar
                         dataKey="completed"
-                        fill="#10b981"
+                        fill="hsl(var(--chart-4))"
                         name="Completed"
-                        radius={[8, 8, 0, 0]}
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={60}
                     />
                 </BarChart>
             </ResponsiveContainer>
         </div>
     );
 }
+
 

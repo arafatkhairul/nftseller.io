@@ -34,45 +34,50 @@ export default function StateCard({
     return (
         <div
             className={cn(
-                'group relative overflow-hidden rounded-xl border border-sidebar-border/70 bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-sidebar-border dark:border-sidebar-border',
+                'group vercel-card relative overflow-hidden rounded-2xl border p-6 transition-all duration-200',
                 className
             )}
         >
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-            <div className="relative flex items-start justify-between">
-                <div className="flex-1">
-                    <p className="text-muted-foreground text-sm font-medium">
-                        {title}
-                    </p>
-                    <h3 className="mt-2 text-2xl font-bold tracking-tight">
-                        {formattedValue}
-                    </h3>
-                    {trend && (
-                        <p
+            <div className="relative flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-2">
+                        <div
                             className={cn(
-                                'mt-2 text-xs font-medium',
-                                trend.isPositive
-                                    ? 'text-emerald-500'
-                                    : 'text-red-500'
+                                'flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110',
+                                iconBgColor,
+                                iconColor
                             )}
                         >
-                            {trend.isPositive ? '↑' : '↓'} {trend.value}
+                            <Icon className="h-5 w-5" />
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-muted-foreground text-xs font-medium">
+                            {title}
                         </p>
+                        <h3 className="text-2xl font-bold tracking-tight vercel-count-up">
+                            {formattedValue}
+                        </h3>
+                    </div>
+                    {trend && (
+                        <div className="flex items-center gap-1.5 pt-1">
+                            <span
+                                className={cn(
+                                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
+                                    trend.isPositive
+                                        ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                        : 'bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400'
+                                )}
+                            >
+                                {trend.isPositive ? '↑' : '↓'} {trend.value}
+                            </span>
+                            <span className="text-xs text-muted-foreground">vs last month</span>
+                        </div>
                     )}
-                </div>
-                <div
-                    className={cn(
-                        'flex h-12 w-12 items-center justify-center rounded-lg transition-all duration-300 group-hover:scale-110',
-                        iconBgColor,
-                        iconColor
-                    )}
-                >
-                    <Icon className="h-6 w-6" />
                 </div>
             </div>
         </div>
     );
 }
+
 
