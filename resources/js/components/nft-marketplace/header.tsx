@@ -53,7 +53,7 @@ export default function Header({ onLoginClick }: HeaderProps) {
                     {/* Login Button */}
                     <Button
                         onClick={onLoginClick}
-                        className="hidden sm:flex pro-button text-black border-none"
+                        className="hidden sm:flex pro-button !text-black border-none"
                     >
                         Login
                     </Button>
