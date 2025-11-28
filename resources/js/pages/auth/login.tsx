@@ -1,4 +1,5 @@
 import AuthenticatedSessionController from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
+import GoogleSignInButton from '@/components/google-sign-in-button';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -26,10 +27,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                 <div className="w-full max-w-md">
                     {/* Logo and Header - Vercel Style */}
                     <div className="text-center mb-8">
-                        <Link href="/" className="inline-block">
-                            <div className="w-10 h-10 bg-foreground rounded-lg flex items-center justify-center mx-auto mb-6">
-                                <span className="text-xl font-bold text-background">N</span>
-                            </div>
+                        <Link href="/" className="inline-flex justify-center w-full">
+                            <img
+                                src="/logo.png"
+                                alt="NFTSeller Logo"
+                                className="h-12 w-auto mb-6 object-contain"
+                            />
                         </Link>
                         <h1 className="text-2xl font-bold text-foreground mb-2">
                             Welcome Back
@@ -50,6 +53,21 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                     {/* Login Form Card - Vercel Style */}
                     <div className="vercel-card border rounded-2xl p-8">
+                        {/* Google Sign In */}
+                        <GoogleSignInButton />
+
+                        {/* Divider */}
+                        <div className="relative my-6">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-border"></div>
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-4 bg-card text-muted-foreground">
+                                    Or continue with email
+                                </span>
+                            </div>
+                        </div>
+
                         <Form
                             {...AuthenticatedSessionController.store.form()}
                             resetOnSuccess={['password']}

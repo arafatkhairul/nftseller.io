@@ -1,4 +1,5 @@
 import RegisteredUserController from '@/actions/App/Http/Controllers/Auth/RegisteredUserController';
+import GoogleSignInButton from '@/components/google-sign-in-button';
 import { login } from '@/routes';
 import { Form, Head, Link } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
@@ -17,10 +18,12 @@ export default function Register() {
                 <div className="w-full max-w-md">
                     {/* Logo and Header - Vercel Style */}
                     <div className="text-center mb-8">
-                        <Link href="/" className="inline-block">
-                            <div className="w-10 h-10 bg-foreground rounded-lg flex items-center justify-center mx-auto mb-6">
-                                <span className="text-xl font-bold text-background">N</span>
-                            </div>
+                        <Link href="/" className="inline-flex justify-center w-full">
+                            <img
+                                src="/logo.png"
+                                alt="NFTSeller Logo"
+                                className="h-12 w-auto mb-6 object-contain"
+                            />
                         </Link>
                         <h1 className="text-2xl font-bold text-foreground mb-2">
                             Create an account
@@ -32,6 +35,21 @@ export default function Register() {
 
                     {/* Register Form Card - Vercel Style */}
                     <div className="vercel-card border rounded-2xl p-8">
+                        {/* Google Sign In */}
+                        <GoogleSignInButton text="Sign up with Google" />
+
+                        {/* Divider */}
+                        <div className="relative my-6">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-border"></div>
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-4 bg-card text-muted-foreground">
+                                    Or continue with email
+                                </span>
+                            </div>
+                        </div>
+
                         <Form
                             {...RegisteredUserController.store.form()}
                             resetOnSuccess={['password', 'password_confirmation']}

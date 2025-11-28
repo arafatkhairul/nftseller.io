@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { FiSearch, FiMenu, FiX } from 'react-icons/fi';
+import { FiMenu, FiX } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 
 interface HeaderProps {
     onLoginClick?: () => void;
@@ -31,25 +30,8 @@ export default function Header({ onLoginClick }: HeaderProps) {
                     />
                 </div>
 
-                {/* Search Bar - Desktop */}
-                <div className="hidden md:flex flex-1 max-w-lg mx-8">
-                    <div className="relative w-full search-container">
-                        <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 search-icon z-10" />
-                        <Input
-                            type="text"
-                            placeholder="Search items, collections, and accounts..."
-                            className="w-full pl-12 pr-6 py-3 h-12 text-base bg-muted border-border text-foreground placeholder-muted-foreground focus:border-primary pro-search rounded-2xl"
-                        />
-                    </div>
-                </div>
-
                 {/* Right Side */}
                 <div className="flex items-center space-x-4">
-                    {/* Search Icon - Mobile */}
-                    <button className="md:hidden p-2">
-                        <FiSearch className="h-6 w-6" />
-                    </button>
-
                     {/* Login Button */}
                     <Button
                         onClick={onLoginClick}
@@ -92,17 +74,9 @@ export default function Header({ onLoginClick }: HeaderProps) {
                 </div>
             </nav>
 
-            {/* Mobile Search - Expanded */}
+            {/* Mobile Menu - Expanded */}
             {isMenuOpen && (
                 <div className="md:hidden px-4 pb-4 border-t border-border">
-                    <div className="relative mt-4 search-container">
-                        <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 search-icon z-10" />
-                        <Input
-                            type="text"
-                            placeholder="Search items, collections, and accounts..."
-                            className="w-full pl-12 pr-6 py-3 h-12 text-base bg-muted border-border text-foreground placeholder-muted-foreground focus:border-primary pro-search rounded-2xl"
-                        />
-                    </div>
                     <Button
                         onClick={onLoginClick}
                         className="w-full mt-4 sm:hidden pro-button text-white border-none"
