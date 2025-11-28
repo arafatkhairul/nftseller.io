@@ -24,8 +24,11 @@ export default function Header({ onLoginClick }: HeaderProps) {
             <div className="flex items-center justify-between px-4 py-3 lg:px-8">
                 {/* Logo */}
                 <div className="flex items-center space-x-2">
-                    <div className="h-8 w-8 rounded-full bg-primary glow-primary"></div>
-                    <span className="text-xl font-bold text-foreground text-glow">NFTSeller</span>
+                    <img
+                        src="/logo.png"
+                        alt="NFTSeller Logo"
+                        className="h-10 w-auto object-contain"
+                    />
                 </div>
 
                 {/* Search Bar - Desktop */}
@@ -50,7 +53,7 @@ export default function Header({ onLoginClick }: HeaderProps) {
                     {/* Login Button */}
                     <Button
                         onClick={onLoginClick}
-                        className="hidden sm:flex pro-button text-white border-none"
+                        className="hidden sm:flex pro-button text-black border-none"
                     >
                         Login
                     </Button>
