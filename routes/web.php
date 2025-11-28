@@ -61,7 +61,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('orders', [\App\Http\Controllers\OrderController::class, 'userOrders'])->name('orders.index');
     Route::post('orders', [\App\Http\Controllers\OrderController::class, 'store'])->name('orders.store');
     Route::get('orders/{order}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
+
+    // P2P Transfer Routes (authenticated)
+    Route::post('p2p-transfer/{id}/payment-completed', [\App\Http\Controllers\P2pTransferController::class, 'markPaymentCompleted'])->name('p2p-transfer.payment-completed');
+    Route::post('p2p-transfer/{id}/release', [\App\Http\Controllers\P2pTransferController::class, 'release'])->name('p2p-transfer.release');
+    Route::post('p2p-transfer/{id}/appeal', [\App\Http\Controllers\P2pTransferController::class, 'appeal'])->name('p2p-transfer.appeal');
 });
+
+// P2P Transfer Public Routes
+Route::get('p2p-transfer/{code}', [\App\Http\Controllers\P2pTransferController::class, 'show'])->name('p2p-transfer.show');
+
+// P2P Transfer API Routes
+Route::post('api/p2p-transfer/create', [\App\Http\Controllers\P2pTransferController::class, 'create'])->middleware('auth');
+Route::get('api/p2p-transfer/{id}/status', [\App\Http\Controllers\P2pTransferController::class, 'getStatus']);
 
 // Admin Routes
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -83,6 +95,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('payment-methods', [\App\Http\Controllers\PaymentMethodController::class, 'store'])->name('payment-methods.store');
     Route::put('payment-methods/{paymentMethod}', [\App\Http\Controllers\PaymentMethodController::class, 'update'])->name('payment-methods.update');
     Route::delete('payment-methods/{paymentMethod}', [\App\Http\Controllers\PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
+
+    // P2P Appeals Routes
+    Route::get('p2p-appeals', [\App\Http\Controllers\P2pTransferController::class, 'adminAppeals'])->name('p2p-appeals');
+    Route::post('p2p-appeals/{id}/resolve', [\App\Http\Controllers\P2pTransferController::class, 'resolveAppeal'])->name('p2p-appeals.resolve');
 });
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

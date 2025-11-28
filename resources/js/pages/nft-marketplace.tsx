@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import Header from '@/components/nft-marketplace/header';
 import HeroBanner from '@/components/nft-marketplace/hero-banner';
 import CollectionBanner from '@/components/nft-marketplace/collection-banner';
@@ -223,6 +223,9 @@ interface DatabaseNFT {
 }
 
 export default function NFTMarketplace({ nfts: dbNfts = [] }: { nfts?: DatabaseNFT[] }) {
+    const page = usePage<{ auth?: { user?: any } }>();
+    const user = page.props.auth?.user || null;
+
     // Loading state management
     const [isLoading, setIsLoading] = useState(true);
     const [selectedNFT, setSelectedNFT] = useState<any | null>(null);
@@ -288,7 +291,7 @@ export default function NFTMarketplace({ nfts: dbNfts = [] }: { nfts?: DatabaseN
 
             <div className="min-h-screen bg-background bg-animated">
                 {/* Header */}
-                <Header onLoginClick={handleLogin} />
+                <Header user={user} onLoginClick={handleLogin} />
 
                 {/* Main Container */}
                 <div className="max-w-7xl mx-auto px-4 lg:px-6 pt-6">

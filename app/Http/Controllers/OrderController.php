@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -34,8 +35,20 @@ class OrderController extends Controller
                 ];
             });
 
+        $paymentMethods = PaymentMethod::where('is_active', true)
+            ->get()
+            ->map(function ($method) {
+                return [
+                    'id' => $method->id,
+                    'name' => $method->name,
+                    'icon' => $method->icon,
+                    'wallet_address' => $method->wallet_address,
+                ];
+            });
+
         return Inertia::render('user/orders', [
             'orders' => $orders,
+            'paymentMethods' => $paymentMethods,
         ]);
     }
 

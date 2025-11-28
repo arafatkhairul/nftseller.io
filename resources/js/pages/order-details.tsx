@@ -27,10 +27,10 @@ interface Props {
 }
 
 const statusConfig = {
-    pending: { color: 'bg-yellow-500/10 text-yellow-700 border-yellow-200', icon: FiClock, label: 'Pending', description: 'Your order is being processed' },
-    completed: { color: 'bg-green-500/10 text-green-700 border-green-200', icon: FiCheckCircle, label: 'Completed', description: 'Order completed successfully' },
-    cancelled: { color: 'bg-red-500/10 text-red-700 border-red-200', icon: FiX, label: 'Cancelled', description: 'Order has been cancelled' },
-    failed: { color: 'bg-red-500/10 text-red-700 border-red-200', icon: FiX, label: 'Failed', description: 'Order failed to process' },
+    pending: { variant: 'warning' as const, icon: FiClock, label: 'Pending', description: 'Your order is being processed' },
+    completed: { variant: 'success' as const, icon: FiCheckCircle, label: 'Completed', description: 'Order completed successfully' },
+    cancelled: { variant: 'error' as const, icon: FiX, label: 'Cancelled', description: 'Order has been cancelled' },
+    failed: { variant: 'error' as const, icon: FiX, label: 'Failed', description: 'Order failed to process' },
 };
 
 export default function OrderDetails({ order }: Props) {
@@ -58,7 +58,7 @@ export default function OrderDetails({ order }: Props) {
                         <h1 className="text-3xl font-bold text-foreground">Order Details</h1>
                         <p className="text-muted-foreground mt-1">Order #{order.order_number}</p>
                     </div>
-                    <Badge className={`${config.color} border flex items-center gap-2 py-2 px-4`}>
+                    <Badge variant={config.variant} className="flex items-center gap-2 py-2 px-4">
                         <StatusIcon className="w-4 h-4" />
                         <span>{config.label}</span>
                     </Badge>
@@ -70,9 +70,9 @@ export default function OrderDetails({ order }: Props) {
                     <Card className="border-sidebar-border/70">
                         <CardContent className="pt-6">
                             <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-lg ${config.color}`}>
+                                <Badge variant={config.variant} className="p-3">
                                     <StatusIcon className="w-6 h-6" />
-                                </div>
+                                </Badge>
                                 <div>
                                     <h3 className="font-semibold text-foreground">{config.label}</h3>
                                     <p className="text-sm text-muted-foreground">{config.description}</p>

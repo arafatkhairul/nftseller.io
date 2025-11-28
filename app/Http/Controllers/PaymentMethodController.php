@@ -6,7 +6,6 @@ use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class PaymentMethodController extends Controller
 {
@@ -51,12 +50,6 @@ class PaymentMethodController extends Controller
             $validated['logo_path'] = $path;
         }
 
-        // Generate QR code if wallet address provided
-        if (!empty($validated['wallet_address'])) {
-            $qrCode = QrCode::format('svg')->size(256)->generate($validated['wallet_address']);
-            $validated['qr_code'] = $qrCode->toSvg();
-        }
-
         PaymentMethod::create($validated);
 
         return back()->with('success', 'Payment method created successfully!');
@@ -85,12 +78,6 @@ class PaymentMethodController extends Controller
             }
             $path = $request->file('logo')->store('payment-methods', 'public');
             $validated['logo_path'] = $path;
-        }
-
-        // Generate QR code if wallet address provided
-        if (!empty($validated['wallet_address'])) {
-            $qrCode = QrCode::format('svg')->size(256)->generate($validated['wallet_address']);
-            $validated['qr_code'] = $qrCode->toSvg();
         }
 
         $paymentMethod->update($validated);

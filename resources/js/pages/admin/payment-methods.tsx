@@ -86,7 +86,7 @@ export default function AdminPaymentMethods({ paymentMethods }: Props) {
         formDataToSend.append('description', formData.description);
         formDataToSend.append('icon', formData.icon);
         formDataToSend.append('wallet_address', formData.wallet_address);
-        formDataToSend.append('is_active', String(formData.is_active));
+        formDataToSend.append('is_active', formData.is_active ? '1' : '0');
         formDataToSend.append('sort_order', String(formData.sort_order));
 
         if (formData.logo) {
