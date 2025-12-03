@@ -12,6 +12,7 @@ class Nft extends Model
         'description',
         'image_path',
         'price',
+        'quantity',
         'blockchain',
         'contract_address',
         'token_id',
@@ -19,10 +20,13 @@ class Nft extends Model
         'creator_id',
         'views',
         'likes',
+        'category_id',
+        'rarity',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'quantity' => 'integer',
         'views' => 'integer',
         'likes' => 'integer',
     ];
@@ -33,5 +37,10 @@ class Nft extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 }

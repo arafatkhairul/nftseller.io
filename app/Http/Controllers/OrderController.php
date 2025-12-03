@@ -171,6 +171,14 @@ class OrderController extends Controller
             'status' => 'required|in:pending,completed,cancelled,failed,sent',
         ]);
 
+        // If status is changing to completed, decrease NFT quantity
+        if ($validated['status'] === 'completed' && $order->status !== 'completed') {
+            $nft = $order->nft;
+            if ($nft) {
+                $nft->decrement('quantity', $order->quantity);
+            }
+        }
+
         $order->update([
             'status' => $validated['status'],
         ]);

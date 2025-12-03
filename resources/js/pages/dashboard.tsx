@@ -2,22 +2,23 @@ import DailyOrdersChart from '@/components/dashboard/daily-orders-chart';
 import OrderChart from '@/components/dashboard/order-chart';
 import OrderStatusChart from '@/components/dashboard/order-status-chart';
 import StateCard from '@/components/dashboard/state-card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import {
-    FaWallet,
-    FaShoppingBag,
-    FaClock,
-    FaCheckCircle,
-    FaPaperPlane,
     FaArrowRight,
+    FaCheckCircle,
+    FaClock,
+    FaHeadset,
+    FaPaperPlane,
+    FaShoppingBag,
+    FaWallet,
 } from 'react-icons/fa';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { FiClock, FiCheckCircle, FiX } from 'react-icons/fi';
+import { FiCheckCircle, FiClock, FiX } from 'react-icons/fi';
 
 interface Order {
     id: number;
@@ -80,6 +81,12 @@ export default function Dashboard({ orders = [], completedOrdersTotal = 0 }: Pro
                         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
                         <p className="text-muted-foreground mt-1">Welcome back! Here's your NFT marketplace overview.</p>
                     </div>
+                    <Link href="/support-tickets">
+                        <Button variant="outline" className="gap-2">
+                            <FaHeadset className="w-4 h-4" />
+                            Support
+                        </Button>
+                    </Link>
                 </div>
 
                 {/* State Cards Grid - Vercel Style */}

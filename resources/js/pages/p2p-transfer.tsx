@@ -1,11 +1,10 @@
-import { Head, router } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { FiClock, FiCheckCircle, FiAlertTriangle, FiX } from 'react-icons/fi';
-import { useState, useEffect } from 'react';
+import { Head, router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { FiAlertTriangle, FiCheckCircle, FiClock, FiX } from 'react-icons/fi';
 
 interface Transfer {
     id: number;
@@ -265,28 +264,23 @@ export default function P2pTransfer({ transfer: initialTransfer }: Props) {
                         )}
 
                         {transfer.status === 'payment_completed' && (
-                            <div className="px-6 py-4 bg-accent border-t border-border space-y-3">
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Button
-                                        onClick={handleRelease}
-                                        variant="default"
-                                        className="gap-2"
-                                    >
-                                        <FiCheckCircle className="w-4 h-4" />
-                                        Release Now
-                                    </Button>
-                                    <Button
-                                        onClick={() => setShowAppealModal(true)}
-                                        variant="outline"
-                                        className="gap-2"
-                                    >
-                                        <FiAlertTriangle className="w-4 h-4" />
-                                        Appeal
-                                    </Button>
+                            <div className="px-6 py-8 bg-accent border-t border-border space-y-4">
+                                <div className="text-center">
+                                    <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto ring-8 ring-green-500/5 mb-4">
+                                        <FiCheckCircle className="w-8 h-8 text-green-600" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-foreground">Payment Marked as Completed</h3>
+                                    <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+                                        Please wait while the seller verifies your payment. The asset will be released automatically once verified.
+                                    </p>
                                 </div>
-                                <p className="text-xs text-center text-muted-foreground">
-                                    Transfer will auto-release if no action is taken within 5 minutes
-                                </p>
+
+                                <div className="bg-background border border-border rounded-lg p-4 max-w-sm mx-auto">
+                                    <div className="flex items-center gap-3">
+                                        <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                                        <p className="text-xs font-medium text-foreground">Waiting for seller confirmation...</p>
+                                    </div>
+                                </div>
                             </div>
                         )}
 

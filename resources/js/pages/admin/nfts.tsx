@@ -1,9 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { Head, router } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaImage } from 'react-icons/fa';
+import { FaEdit, FaImage, FaPlus, FaTrash } from 'react-icons/fa';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -22,19 +22,29 @@ interface NFT {
     description: string;
     image_url: string;
     price: number;
+    quantity: number;
     blockchain: string;
     contract_address: string;
     token_id: string;
     status: string;
     creator: string;
     created_at: string;
+    category_id?: number;
+    rarity?: string;
+    views: number;
+    likes: number;
 }
 
 interface ErrorMessages {
     [key: string]: string | string[];
 }
 
-export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
+interface Category {
+    id: number;
+    name: string;
+}
+
+export default function AdminNfts({ nfts, categories }: { nfts: NFT[], categories: Category[] }) {
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -45,10 +55,15 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
         description: '',
         image: null as File | null,
         price: '',
+        quantity: '1',
         blockchain: 'Ethereum',
         contract_address: '',
         token_id: '',
         status: 'active',
+        category_id: '',
+        rarity: '',
+        views: '0',
+        likes: '0',
     });
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,6 +95,12 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
         if (!formData.price) {
             newErrors.price = 'Price is required';
         }
+        if (!formData.quantity) {
+            newErrors.quantity = 'Quantity is required';
+        }
+        if (parseInt(formData.quantity) < 1) {
+            newErrors.quantity = 'Quantity must be at least 1';
+        }
         if (!formData.blockchain) {
             newErrors.blockchain = 'Blockchain is required';
         }
@@ -104,10 +125,19 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
             form.append('image', formData.image);
         }
         form.append('price', formData.price);
+        form.append('quantity', formData.quantity);
         form.append('blockchain', formData.blockchain);
         form.append('contract_address', formData.contract_address);
         form.append('token_id', formData.token_id);
         form.append('status', formData.status);
+        if (formData.category_id) {
+            form.append('category_id', formData.category_id);
+        }
+        if (formData.rarity) {
+            form.append('rarity', formData.rarity);
+        }
+        form.append('views', formData.views);
+        form.append('likes', formData.likes);
 
         if (editingId) {
             // For PUT requests with FormData, we need to use POST with _method override
@@ -121,10 +151,15 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
                         description: '',
                         image: null,
                         price: '',
+                        quantity: '1',
                         blockchain: 'Ethereum',
                         contract_address: '',
                         token_id: '',
                         status: 'active',
+                        category_id: '',
+                        rarity: '',
+                        views: '0',
+                        likes: '0',
                     });
                     setImagePreview(null);
                     setEditingId(null);
@@ -148,10 +183,15 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
                         description: '',
                         image: null,
                         price: '',
+                        quantity: '1',
                         blockchain: 'Ethereum',
                         contract_address: '',
                         token_id: '',
                         status: 'active',
+                        category_id: '',
+                        rarity: '',
+                        views: '0',
+                        likes: '0',
                     });
                     setImagePreview(null);
                     setErrors({});
@@ -174,10 +214,15 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
             description: '',
             image: null,
             price: '',
+            quantity: '1',
             blockchain: 'Ethereum',
             contract_address: '',
             token_id: '',
             status: 'active',
+            category_id: '',
+            rarity: '',
+            views: '0',
+            likes: '0',
         });
         setImagePreview(null);
         setEditingId(null);
@@ -189,10 +234,15 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
             description: nft.description,
             image: null,
             price: nft.price.toString(),
+            quantity: nft.quantity.toString(),
             blockchain: nft.blockchain,
             contract_address: nft.contract_address || '',
             token_id: nft.token_id || '',
             status: nft.status,
+            category_id: nft.category_id ? nft.category_id.toString() : '',
+            rarity: nft.rarity || '',
+            views: nft.views.toString(),
+            likes: nft.likes.toString(),
         });
         // Show existing image preview when editing
         if (nft.image_url) {
@@ -270,9 +320,8 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             placeholder="e.g., Digital Art #1"
-                                            className={`w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                                                errors.name ? 'border-red-500' : ''
-                                            }`}
+                                            className={`w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${errors.name ? 'border-red-500' : ''
+                                                }`}
                                             required
                                         />
                                         {errors.name && (
@@ -289,14 +338,31 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
                                             value={formData.price}
                                             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                                             placeholder="0.00"
-                                            className={`w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                                                errors.price ? 'border-red-500' : ''
-                                            }`}
+                                            className={`w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${errors.price ? 'border-red-500' : ''
+                                                }`}
                                             required
                                         />
                                         {errors.price && (
                                             <p className="text-red-500 text-sm mt-1">
                                                 {Array.isArray(errors.price) ? errors.price[0] : errors.price}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium">Quantity</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={formData.quantity}
+                                            onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                                            placeholder="1"
+                                            className={`w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${errors.quantity ? 'border-red-500' : ''
+                                                }`}
+                                            required
+                                        />
+                                        {errors.quantity && (
+                                            <p className="text-red-500 text-sm mt-1">
+                                                {Array.isArray(errors.quantity) ? errors.quantity[0] : errors.quantity}
                                             </p>
                                         )}
                                     </div>
@@ -309,9 +375,8 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                         placeholder="Describe your NFT..."
                                         rows={3}
-                                        className={`w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                                            errors.description ? 'border-red-500' : ''
-                                        }`}
+                                        className={`w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${errors.description ? 'border-red-500' : ''
+                                            }`}
                                         required
                                     />
                                     {errors.description && (
@@ -339,11 +404,10 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
                                             </div>
                                         )}
                                         <label
-                                            className={`w-full flex items-center justify-center px-4 py-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
-                                                errors.image
-                                                    ? 'border-red-500 bg-red-500/5'
-                                                    : 'border-primary/30 hover:border-primary/50 bg-primary/5'
-                                            }`}
+                                            className={`w-full flex items-center justify-center px-4 py-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${errors.image
+                                                ? 'border-red-500 bg-red-500/5'
+                                                : 'border-primary/30 hover:border-primary/50 bg-primary/5'
+                                                }`}
                                         >
                                             <div className="text-center">
                                                 <svg className="mx-auto h-8 w-8 text-primary" stroke="currentColor" fill="none" viewBox="0 0 48 48">
@@ -370,7 +434,62 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
                                     </div>
                                 </div>
 
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="text-sm font-medium">Rarity</label>
+                                        <select
+                                            value={formData.rarity}
+                                            onChange={(e) => setFormData({ ...formData, rarity: e.target.value })}
+                                            className="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                        >
+                                            <option value="">None</option>
+                                            <option value="Common">Common</option>
+                                            <option value="Uncommon">Uncommon</option>
+                                            <option value="Rare">Rare</option>
+                                            <option value="Epic">Epic</option>
+                                            <option value="Legendary">Legendary</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium">Views</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={formData.views}
+                                            onChange={(e) => setFormData({ ...formData, views: e.target.value })}
+                                            placeholder="0"
+                                            className="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium">Likes</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={formData.likes}
+                                            onChange={(e) => setFormData({ ...formData, likes: e.target.value })}
+                                            placeholder="0"
+                                            className="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-sm font-medium">Category</label>
+                                        <select
+                                            value={formData.category_id}
+                                            onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                                            className="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                        >
+                                            <option value="">Select Category</option>
+                                            {categories.map((category) => (
+                                                <option key={category.id} value={category.id}>
+                                                    {category.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                     <div>
                                         <label className="text-sm font-medium">Blockchain</label>
                                         <select
@@ -438,8 +557,10 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
                                             <th className="pb-3 px-2">Name</th>
                                             <th className="pb-3 px-2">Image</th>
                                             <th className="pb-3 px-2">Price</th>
+                                            <th className="pb-3 px-2">Qty</th>
                                             <th className="pb-3 px-2">Creator</th>
                                             <th className="pb-3 px-2">Status</th>
+                                            <th className="pb-3 px-2">Rarity</th>
                                             <th className="pb-3 px-2">Date</th>
                                             <th className="pb-3 px-2">Actions</th>
                                         </tr>
@@ -456,10 +577,16 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
                                                     />
                                                 </td>
                                                 <td className="py-4 px-2 font-semibold text-green-500">{nft.price} ETH</td>
+                                                <td className="py-4 px-2">{nft.quantity}</td>
                                                 <td className="py-4 px-2 text-sm text-muted-foreground">{nft.creator}</td>
                                                 <td className="py-4 px-2">
                                                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(nft.status)}`}>
                                                         {nft.status}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-2">
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-500">
+                                                        {nft.rarity || 'Common'}
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-2 text-sm text-muted-foreground">{nft.created_at}</td>
@@ -490,6 +617,6 @@ export default function AdminNfts({ nfts }: { nfts: NFT[] }) {
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+        </AppLayout >
     );
 }

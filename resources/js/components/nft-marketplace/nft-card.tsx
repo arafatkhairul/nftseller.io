@@ -11,6 +11,11 @@ export interface NFTCardProps {
         usd: number;
     };
     creator?: string;
+    likes?: number;
+    views?: number;
+    rarity?: string;
+    category?: string;
+    isLiked?: boolean;
     onView?: (id: string) => void;
     onPurchase?: (id: string) => void;
     className?: string;
@@ -35,7 +40,10 @@ export default function NFTCard({
     };
 
     return (
-        <Card className={`group vercel-card relative overflow-hidden rounded-2xl border transition-all duration-200 p-0 ${className}`}>
+        <Card
+            onClick={handleView}
+            className={`group vercel-card relative overflow-hidden rounded-2xl border transition-all duration-200 p-0 cursor-pointer ${className}`}
+        >
             {/* Image Container */}
             <div className="relative aspect-square overflow-hidden bg-muted">
                 <img
@@ -100,14 +108,20 @@ export default function NFTCard({
                 {/* Action Buttons - Vercel Style */}
                 <div className="flex gap-2 pt-2">
                     <button
-                        onClick={handleView}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleView();
+                        }}
                         className="flex-1 py-2 px-3 bg-accent hover:bg-accent/80 text-foreground rounded-xl text-xs font-medium transition-all duration-200 flex items-center justify-center gap-2"
                     >
                         <FiEye className="w-3.5 h-3.5" />
                         <span>View</span>
                     </button>
                     <button
-                        onClick={handlePurchase}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleView();
+                        }}
                         className="flex-1 py-2 px-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-2"
                     >
                         <FiShoppingCart className="w-3.5 h-3.5" />

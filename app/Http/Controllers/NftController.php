@@ -13,7 +13,7 @@ class NftController extends Controller
      */
     public function index()
     {
-        $nfts = Nft::with('creator')
+        $nfts = Nft::with(['creator', 'category'])
             ->where('status', 'active')
             ->latest()
             ->get()
@@ -30,16 +30,24 @@ class NftController extends Controller
                         'id' => $nft->creator->id,
                         'name' => $nft->creator->name,
                     ] : null,
+                    'category' => $nft->category ? $nft->category->name : null,
                     'views' => $nft->views,
                     'likes' => $nft->likes,
+                    'rarity' => $nft->rarity,
                 ];
             });
 
+        $categories = \App\Models\Category::where('is_active', true)->orderBy('sort_order')->get();
+
         return Inertia::render('nft-marketplace', [
             'nfts' => $nfts,
+            'categories' => $categories,
         ]);
     }
 
+    /**
+     * Show NFT management page in admin
+     */
     /**
      * Show NFT management page in admin
      */
@@ -55,17 +63,25 @@ class NftController extends Controller
                     'description' => $nft->description,
                     'image_url' => $nft->image_path ? asset('storage/' . $nft->image_path) : null,
                     'price' => $nft->price,
+                    'quantity' => $nft->quantity,
                     'blockchain' => $nft->blockchain,
                     'contract_address' => $nft->contract_address,
                     'token_id' => $nft->token_id,
                     'status' => $nft->status,
+                    'rarity' => $nft->rarity,
+                    'views' => $nft->views,
+                    'likes' => $nft->likes,
+                    'category_id' => $nft->category_id,
                     'creator' => $nft->creator ? $nft->creator->name : 'Unknown',
                     'created_at' => $nft->created_at->format('Y-m-d'),
                 ];
             });
 
+        $categories = \App\Models\Category::where('is_active', true)->get();
+
         return Inertia::render('admin/nfts', [
             'nfts' => $nfts,
+            'categories' => $categories,
         ]);
     }
 
@@ -79,10 +95,15 @@ class NftController extends Controller
             'description' => 'required|string',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'price' => 'required|numeric|min:0.01',
+            'quantity' => 'required|integer|min:1',
             'blockchain' => 'required|string',
             'contract_address' => 'nullable|string',
             'token_id' => 'nullable|string',
             'status' => 'required|in:active,inactive,sold',
+            'category_id' => 'nullable|exists:categories,id',
+            'rarity' => 'nullable|string',
+            'views' => 'nullable|integer|min:0',
+            'likes' => 'nullable|integer|min:0',
         ]);
 
         // Handle file upload
@@ -109,10 +130,15 @@ class NftController extends Controller
             'description' => 'required|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'price' => 'required|numeric|min:0.01',
+            'quantity' => 'required|integer|min:1',
             'blockchain' => 'required|string',
             'contract_address' => 'nullable|string',
             'token_id' => 'nullable|string',
             'status' => 'required|in:active,inactive,sold',
+            'category_id' => 'nullable|exists:categories,id',
+            'rarity' => 'nullable|string',
+            'views' => 'nullable|integer|min:0',
+            'likes' => 'nullable|integer|min:0',
         ]);
 
         // Handle file upload if new image provided

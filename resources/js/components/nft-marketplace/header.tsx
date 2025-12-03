@@ -1,7 +1,4 @@
-import { useState } from 'react';
-import { FiMenu, FiX, FiUser, FiLogOut, FiHome } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
-import { router } from '@inertiajs/react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,6 +7,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { router } from '@inertiajs/react';
+import { useState } from 'react';
+import { FiHome, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 
 interface User {
     id: number;
@@ -18,21 +18,28 @@ interface User {
     avatar?: string | null;
 }
 
+interface Category {
+    id: number;
+    name: string;
+    slug: string;
+}
+
 interface HeaderProps {
     user?: User | null;
     onLoginClick?: () => void;
+    categories?: Category[];
+    activeCategory?: string;
+    onCategoryChange?: (category: string) => void;
 }
 
-export default function Header({ user, onLoginClick }: HeaderProps) {
+export default function Header({
+    user,
+    onLoginClick,
+    categories = [],
+    activeCategory = 'All',
+    onCategoryChange
+}: HeaderProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-    const navigationItems = [
-        { label: 'All', href: '#', active: true },
-        { label: 'Gaming', href: '#', active: false },
-        { label: 'Arts', href: '#', active: false },
-        { label: 'Notes', href: '#', active: false },
-        { label: 'Wise', href: '#', active: false },
-    ];
 
     const handleDashboard = () => {
         router.visit('/dashboard');
@@ -40,6 +47,12 @@ export default function Header({ user, onLoginClick }: HeaderProps) {
 
     const handleLogout = () => {
         router.post('/logout');
+    };
+
+    const handleCategoryClick = (categoryName: string) => {
+        if (onCategoryChange) {
+            onCategoryChange(categoryName);
+        }
     };
 
     return (
@@ -123,17 +136,26 @@ export default function Header({ user, onLoginClick }: HeaderProps) {
             <nav className={`border-t border-border ${isMenuOpen ? 'block' : 'hidden'} lg:block`}>
                 <div className="px-4 lg:px-8">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-8 py-4 lg:py-0">
-                        {navigationItems.map((item) => (
-                            <a
-                                key={item.label}
-                                href={item.href}
-                                className={`py-2 lg:py-4 px-2 text-sm font-medium transition-colors hover:text-primary ${item.active
+                        <button
+                            onClick={() => handleCategoryClick('All')}
+                            className={`py-2 lg:py-4 px-2 text-sm font-medium transition-colors hover:text-primary text-left ${activeCategory === 'All'
+                                ? 'text-primary border-b-2 border-primary lg:border-b-2'
+                                : 'text-muted-foreground'
+                                }`}
+                        >
+                            All
+                        </button>
+                        {categories.map((category) => (
+                            <button
+                                key={category.id}
+                                onClick={() => handleCategoryClick(category.name)}
+                                className={`py-2 lg:py-4 px-2 text-sm font-medium transition-colors hover:text-primary text-left ${activeCategory === category.name
                                     ? 'text-primary border-b-2 border-primary lg:border-b-2'
                                     : 'text-muted-foreground'
                                     }`}
                             >
-                                {item.label}
-                            </a>
+                                {category.name}
+                            </button>
                         ))}
                     </div>
                 </div>

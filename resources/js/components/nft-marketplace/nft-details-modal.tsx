@@ -1,20 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
+    DialogContent
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { SiEthereum } from 'react-icons/si';
-import { FiHeart, FiEye, FiShoppingCart, FiCheck, FiArrowLeft } from 'react-icons/fi';
-import { type NFTCardProps } from './nft-card';
 import { router } from '@inertiajs/react';
+import { useEffect, useMemo, useState } from 'react';
+import { FiActivity, FiArrowLeft, FiCheck, FiClock, FiEye, FiHeart, FiShare2 } from 'react-icons/fi';
+import { SiEthereum } from 'react-icons/si';
+import { type NFTCardProps } from './nft-card';
 
 interface PaymentMethodOption {
     id: number;
@@ -122,10 +117,10 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
     };
 
     const traits = [
-        { label: 'Background', value: 'Oceanic' },
-        { label: 'Accessory', value: 'Goggles' },
-        { label: 'Suit', value: 'Explorer' },
-        { label: 'Mood', value: 'Chill' },
+        { label: 'Background', value: 'Oceanic', rarity: '12%' },
+        { label: 'Accessory', value: 'Goggles', rarity: '8%' },
+        { label: 'Suit', value: 'Explorer', rarity: '5%' },
+        { label: 'Mood', value: 'Chill', rarity: '22%' },
     ];
 
     const selectedPaymentMethod = paymentMethods.find((m) => m.name === method);
@@ -135,291 +130,337 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
         const s = Math.floor(total % 60).toString().padStart(2, '0');
         return `${m}:${s}`;
     };
+    const handleShare = async () => {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: nft.name,
+                    text: `Check out ${nft.name} on our marketplace!`,
+                    url: window.location.href,
+                });
+            } catch (error) {
+                console.log('Error sharing:', error);
+            }
+        } else {
+            navigator.clipboard.writeText(window.location.href);
+            // You might want to add a toast notification here
+        }
+    };
+
+
+    const formatNumber = (num: number) => {
+        if (num >= 1000000000) {
+            return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+        }
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+        }
+        if (num >= 1000) {
+            return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+        }
+        return num.toString();
+    };
+
+    const getRarityColor = (rarity: string | undefined) => {
+        const r = (rarity || 'Common').toLowerCase();
+        if (r === 'legendary') return 'text-yellow-500';
+        if (r === 'epic') return 'text-purple-500';
+        if (r === 'rare') return 'text-blue-500';
+        if (r === 'uncommon') return 'text-green-500';
+        return 'text-gray-500';
+    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent fullScreen className="overflow-hidden bg-card flex flex-col">
-                {/* Header Bar */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-sidebar-border/70 bg-gradient-to-b from-background/60 to-background/10 backdrop-blur-sm">
-                    <div className="flex items-center gap-2">
-                        <Badge variant="secondary">#{nft.id.padStart(4, '0')}</Badge>
-                        <Badge>Rare</Badge>
+            <DialogContent
+                fullScreen
+                className="p-0 gap-0 overflow-hidden bg-background flex flex-col md:flex-row [&>button]:hidden"
+            >
+                {/* Left Side - Image Section (Enhanced) */}
+                <div className="relative w-full md:w-[50%] lg:w-[60%] bg-zinc-950 flex items-center justify-center p-8 overflow-hidden group">
+                    {/* Ambient Background Effect */}
+                    <div className="absolute inset-0 pointer-events-none">
+                        <img src={nft.image} alt="" className="w-full h-full object-cover blur-sm scale-110" />
+                        <div className="absolute inset-0 bg-black/10 backdrop-blur-sm" />
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1"><FiHeart className="w-4 h-4" /> {nft.likes ?? 0}</div>
-                        <div className="flex items-center gap-1"><FiEye className="w-4 h-4" /> {nft.views ?? 0}</div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950/10" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-transparent via-zinc-950/20 to-zinc-950/60" />
+
+                    {/* Main Image */}
+                    <div className="relative z-10 transition-transform duration-700 group-hover:scale-105 group-hover:rotate-1">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-500" />
+                        <img
+                            src={nft.image}
+                            alt={nft.name}
+                            className="relative w-full max-w-[500px] aspect-square object-cover rounded-2xl shadow-2xl ring-1 ring-white/10"
+                        />
+                    </div>
+
+                    {/* Floating Actions */}
+                    <div className="absolute top-6 left-6 z-20">
+                        <Badge variant="secondary" className="bg-black/40 backdrop-blur-xl border-white/10 text-white px-3 py-1.5 text-sm font-medium hover:bg-black/60 transition-colors">
+                            <SiEthereum className="w-3.5 h-3.5 mr-2 text-blue-400" /> Ethereum Network
+                        </Badge>
+                    </div>
+
+                    <div className="absolute bottom-6 right-6 z-20 flex gap-3">
+                        <Button
+                            size="icon"
+                            variant="secondary"
+                            className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white hover:bg-white/10 hover:scale-110 transition-all duration-300"
+                            onClick={handleShare}
+                        >
+                            <FiShare2 className="w-4 h-4" />
+                        </Button>
                     </div>
                 </div>
 
-                {/* Stepper */}
-                <div className="px-6 py-3 border-b border-sidebar-border/70">
-                    <div className="flex items-center gap-3">
-                        <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${step === 1 ? 'bg-blue-500/10 text-blue-500 border border-blue-500/30' : 'text-muted-foreground border border-transparent'}`}>
-                            <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs ${step === 1 ? 'bg-blue-500 text-white' : 'bg-muted text-foreground/70'}`}>1</span>
-                            <span>Details</span>
+                {/* Right Side - Content Section */}
+                <div className="flex-1 flex flex-col bg-background/95 backdrop-blur-3xl h-full overflow-hidden relative border-l border-border/50">
+                    {/* Decorative gradient blob */}
+                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+                    {/* Header */}
+                    <div className="px-8 py-6 border-b flex items-center justify-between bg-background/80 backdrop-blur-md z-10 sticky top-0">
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span className="font-semibold text-foreground text-lg tracking-tight">
+                                {step === 1 ? 'NFT Details' : 'Checkout'}
+                            </span>
+                            {step === 2 && (
+                                <>
+                                    <span className="text-muted-foreground/40 text-lg">/</span>
+                                    <span className="flex items-center gap-2 text-sm bg-red-500/10 text-red-500 px-3 py-1 rounded-full font-medium animate-pulse">
+                                        <FiClock className="w-3.5 h-3.5" /> {formatTime(countdown)}
+                                    </span>
+                                </>
+                            )}
                         </div>
-                        <div className="h-px flex-1 bg-sidebar-border/70" />
-                        <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${step === 2 ? 'bg-blue-500/10 text-blue-500 border border-blue-500/30' : 'text-muted-foreground border border-transparent'}`}>
-                            <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs ${step === 2 ? 'bg-blue-500 text-white' : 'bg-muted text-foreground/70'}`}>2</span>
-                            <span>Payment</span>
-                        </div>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-muted transition-colors" onClick={() => onOpenChange(false)}>
+                            <span className="sr-only">Close</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                        </Button>
                     </div>
-                </div>
 
-                <div className="flex-1 overflow-y-auto">
-                    {step === 1 ? (
-                        // STEP 1: DETAILS
-                        <div className="grid grid-cols-1 md:grid-cols-2">
-                            <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 p-6 flex items-center justify-center">
-                                <img
-                                    src={nft.image}
-                                    alt={nft.name}
-                                    className="rounded-xl object-cover w-full h-full max-h-full shadow-xl"
-                                />
-                                <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-tr from-white/5 via-transparent to-white/10" />
-                            </div>
-
-                            <div className="p-6 space-y-5">
-                                <DialogHeader className="space-y-1">
-                                    <DialogTitle className="text-2xl font-semibold tracking-tight">
-                                        {nft.name}
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        Minted by {nft.creator ?? 'Unknown'} • Secure marketplace trade
-                                    </DialogDescription>
-                                </DialogHeader>
-
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarFallback>
-                                            {(nft.creator ?? 'NA').slice(0, 2).toUpperCase()}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="text-sm">
-                                        <div className="font-medium">{nft.creator ?? 'Hypurr Collection'}</div>
-                                        <div className="text-muted-foreground">Verified Collection</div>
-                                    </div>
-                                </div>
-
-                                <div className="rounded-xl border border-sidebar-border/70 p-4">
-                                    <div className="flex items-end justify-between">
-                                        <div className="flex items-end gap-3">
-                                            <div>
-                                                <div className="text-3xl font-bold leading-none">
-                                                    {priceHype}
+                    {/* Scrollable Content */}
+                    <div className="flex-1 overflow-y-auto">
+                        <div className="max-w-2xl mx-auto p-8">
+                            {step === 1 ? (
+                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                                    {/* Title Section */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-2">
+                                                <h2 className="text-4xl font-bold tracking-tight text-foreground">{nft.name}</h2>
+                                                <div className="flex items-center gap-2 text-base">
+                                                    <span className="text-muted-foreground">Owned by</span>
+                                                    <span className="font-medium text-blue-500 hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-1">
+                                                        {nft.creator || 'Unknown'}
+                                                        <FiCheck className="w-3.5 h-3.5" />
+                                                    </span>
                                                 </div>
-                                                <div className="text-xs text-muted-foreground font-semibold">HYPE</div>
-                                            </div>
-                                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-inner">
-                                                <SiEthereum className="w-4 h-4 text-white" />
                                             </div>
                                         </div>
-                                        <div className="text-sm text-emerald-500 font-medium">
-                                            ≈ ${nft.price.usd.toLocaleString()}
+                                    </div>
+
+                                    {/* Price Card */}
+                                    <div className="p-6 rounded-2xl border bg-card/50 hover:bg-card/80 transition-colors space-y-5 shadow-sm">
+                                        <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Current Price</div>
+                                        <div className="flex items-baseline gap-4">
+                                            <div className="text-4xl font-bold font-mono tracking-tight">{nft.price.eth} ETH</div>
+                                            <div className="text-xl text-muted-foreground font-medium">
+                                                ${nft.price.usd.toLocaleString()}
+                                            </div>
+                                        </div>
+                                        <div className="pt-2">
+                                            <Button size="lg" className="w-full font-bold text-lg h-14 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all" onClick={handleBuy}>
+                                                Buy Now
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    {/* Description */}
+                                    <div className="space-y-3">
+                                        <div className="text-base font-semibold text-foreground flex items-center gap-2">
+                                            Description
+                                        </div>
+                                        <p className="text-base text-muted-foreground leading-relaxed">
+                                            This unique digital collectible is part of the {nft.creator} collection.
+                                            Verified on the blockchain, this NFT grants you exclusive ownership rights and access to community perks.
+                                        </p>
+                                    </div>
+
+                                    {/* Stats Grid */}
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="p-4 rounded-xl border bg-card/50 text-center space-y-1">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Views</div>
+                                            <div className="text-xl font-bold flex items-center justify-center gap-2">
+                                                <FiEye className="w-4 h-4 text-blue-500" />
+                                                {formatNumber(nft.views || 0)}
+                                            </div>
+                                        </div>
+                                        <div className="p-4 rounded-xl border bg-card/50 text-center space-y-1">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Likes</div>
+                                            <div className="text-xl font-bold flex items-center justify-center gap-2">
+                                                <FiHeart className="w-4 h-4 text-red-500" />
+                                                {formatNumber(nft.likes || 0)}
+                                            </div>
+                                        </div>
+                                        <div className="p-4 rounded-xl border bg-card/50 text-center space-y-1">
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Rarity</div>
+                                            <div className={`text-xl font-bold flex items-center justify-center gap-2 ${getRarityColor(nft.rarity)}`}>
+                                                <FiActivity className="w-4 h-4" />
+                                                {nft.rarity || 'Common'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Traits Grid */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 text-base font-semibold text-foreground">
+                                            <FiActivity className="w-4 h-4" /> Properties
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                            {traits.map((trait) => (
+                                                <div key={trait.label} className="p-4 rounded-xl border bg-muted/30 hover:bg-muted/60 transition-all cursor-default group">
+                                                    <div className="text-xs text-blue-500 font-bold uppercase tracking-wider mb-1.5 group-hover:text-blue-400">{trait.label}</div>
+                                                    <div className="font-semibold text-base text-foreground">{trait.value}</div>
+                                                    <div className="text-xs text-muted-foreground mt-1.5">{trait.rarity} rarity</div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
-
-                                <div>
-                                    <div className="mb-2 text-sm font-medium">Properties</div>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                                        {traits.map((t) => (
-                                            <div key={t.label} className="rounded-md border border-sidebar-border/70 p-3">
-                                                <div className="text-xs text-muted-foreground">{t.label}</div>
-                                                <div className="text-sm font-medium">{t.value}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="text-sm text-muted-foreground leading-relaxed">
-                                    Verified collection item. Ownership transfers immediately on purchase. All sales are final.
-                                </div>
-
-                                <DialogFooter className="gap-2 pt-1">
-                                    <Button variant="secondary" onClick={() => onOpenChange(false)}>Close</Button>
-                                    <Button onClick={handleBuy} className="gap-2">
-                                        <FiShoppingCart className="w-4 h-4" /> Buy Now
+                            ) : (
+                                <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
+                                    <Button variant="ghost" size="sm" className="-ml-2 gap-1 text-muted-foreground hover:text-foreground" onClick={() => setStep(1)}>
+                                        <FiArrowLeft className="w-4 h-4" /> Back to details
                                     </Button>
-                                </DialogFooter>
-                            </div>
-                        </div>
-                    ) : (
-                        // STEP 2: PAYMENT
-                        <div className="grid grid-cols-1 lg:grid-cols-5">
-                            <div className="lg:col-span-2 border-r border-sidebar-border/70 p-6 space-y-3">
-                                <div className="text-lg font-semibold">Select Payment Method</div>
-                                {loadingMethods ? (
-                                    <div className="text-sm text-muted-foreground">Loading payment methods...</div>
-                                ) : paymentMethods.length > 0 ? (
-                                    <div className="space-y-2">
-                                        {paymentMethods.map((pm) => (
-                                            <button
-                                                key={pm.id}
-                                                onClick={() => setMethod(pm.name)}
-                                                className={`w-full text-left rounded-lg border px-4 py-3 transition-colors ${method === pm.name
-                                                    ? 'border-blue-500/40 bg-blue-500/10'
-                                                    : 'border-sidebar-border/70 hover:bg-muted/50'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                        {pm.logo_path && (
-                                                            <img
-                                                                src={`/storage/${pm.logo_path}`}
-                                                                alt={pm.name}
-                                                                className="w-10 h-10 rounded object-cover flex-shrink-0"
-                                                            />
-                                                        )}
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="font-medium">{pm.name}</div>
-                                                            {pm.description && (
-                                                                <div className="text-xs text-muted-foreground truncate">{pm.description}</div>
+
+                                    <div className="space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-lg font-semibold tracking-tight">Select Payment Method</h3>
+                                            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Step 1 of 2</span>
+                                        </div>
+
+                                        {loadingMethods ? (
+                                            <div className="flex items-center justify-center py-12">
+                                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                                            </div>
+                                        ) : (
+                                            <div className="grid gap-3">
+                                                {paymentMethods.map((pm) => (
+                                                    <div
+                                                        key={pm.id}
+                                                        onClick={() => setMethod(pm.name)}
+                                                        className={`
+                                                            group relative flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-all duration-200
+                                                            ${method === pm.name
+                                                                ? 'border-zinc-500 ring-1 ring-zinc-500 bg-zinc-500/10'
+                                                                : 'border-border hover:border-zinc-500/50 hover:bg-muted/20'
+                                                            }
+                                                        `}
+                                                    >
+                                                        {/* Radio Indicator */}
+                                                        <div className={`
+                                                            h-5 w-5 rounded-full border flex items-center justify-center transition-colors
+                                                            ${method === pm.name
+                                                                ? 'border-foreground bg-foreground text-background'
+                                                                : 'border-muted-foreground/30 group-hover:border-muted-foreground/60'
+                                                            }
+                                                        `}>
+                                                            {method === pm.name && <div className="h-2 w-2 rounded-full bg-background" />}
+                                                        </div>
+
+                                                        {/* Icon/Logo */}
+                                                        <div className="h-10 w-10 rounded-md bg-muted/50 flex items-center justify-center border border-border/50">
+                                                            {pm.logo_path ? (
+                                                                <img src={`/storage/${pm.logo_path}`} alt={pm.name} className="h-6 w-6 object-contain" />
+                                                            ) : (
+                                                                <span className="text-sm font-bold">{pm.name[0]}</span>
                                                             )}
                                                         </div>
+
+                                                        {/* Text */}
+                                                        <div className="flex-1">
+                                                            <div className="font-medium text-sm text-foreground">{pm.name}</div>
+                                                            {pm.description && <div className="text-xs text-muted-foreground mt-0.5">{pm.description}</div>}
+                                                        </div>
                                                     </div>
-                                                    {method === pm.name && <FiCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />}
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {selectedPaymentMethod && (
+                                        <div className="space-y-6 pt-6 border-t animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                            <div className="bg-muted/30 rounded-2xl p-6 space-y-5 border">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground font-medium">Total Amount</span>
+                                                    <span className="font-mono font-bold text-lg">{nft.price.eth} ETH</span>
                                                 </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-sm text-muted-foreground">No payment methods available</div>
-                                )}
 
-                                <div className="pt-4">
-                                    <Button variant="ghost" className="gap-2" onClick={() => setStep(1)}>
-                                        <FiArrowLeft className="w-4 h-4" /> Back to Details
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div className="lg:col-span-3 p-6 space-y-5 overflow-y-auto">
-                                <DialogHeader className="space-y-1">
-                                    <div className="flex items-center justify-between">
-                                        <DialogTitle className="text-2xl font-semibold tracking-tight">
-                                            Checkout
-                                        </DialogTitle>
-                                        <div className="rounded-full border border-sidebar-border/70 px-3 py-1 text-sm font-medium flex items-center gap-2">
-                                            <span className="text-muted-foreground">Time left</span>
-                                            <span className={`tabular-nums ${countdown <= 60 ? 'text-red-500' : 'text-foreground'}`}>{formatTime(countdown)}</span>
-                                        </div>
-                                    </div>
-                                    <DialogDescription>
-                                        You are purchasing <span className="font-medium text-foreground">{nft.name}</span>
-                                    </DialogDescription>
-                                </DialogHeader>
-
-                                <div className="rounded-xl border border-sidebar-border/70 p-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <div className="text-sm text-muted-foreground">Total</div>
-                                            <div className="text-xl font-semibold">{priceHype} HYPE</div>
-                                        </div>
-                                        <div className="text-sm text-emerald-500 font-medium">
-                                            ≈ ${nft.price.usd.toLocaleString()}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {selectedPaymentMethod ? (
-                                    <div className="rounded-xl border border-sidebar-border/70 p-4 space-y-4">
-                                        {/* Payment method header with logo */}
-                                        <div className="flex items-center gap-3">
-                                            {selectedPaymentMethod.logo_path && (
-                                                <img
-                                                    src={`/storage/${selectedPaymentMethod.logo_path}`}
-                                                    alt={selectedPaymentMethod.name}
-                                                    className="w-12 h-12 rounded-lg object-cover"
-                                                />
-                                            )}
-                                            <div>
-                                                <div className="text-sm font-medium">{selectedPaymentMethod.name}</div>
-                                                {selectedPaymentMethod.description && (
-                                                    <div className="text-xs text-muted-foreground">{selectedPaymentMethod.description}</div>
+                                                {selectedPaymentMethod.qr_code && (
+                                                    <div className="space-y-4 pt-2">
+                                                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">Scan to Pay</div>
+                                                        <div className="bg-white p-3 rounded-xl w-fit mx-auto shadow-sm" dangerouslySetInnerHTML={{ __html: selectedPaymentMethod.qr_code }} />
+                                                    </div>
                                                 )}
-                                            </div>
-                                        </div>
 
-                                        {/* Amount */}
-                                        <div className="grid grid-cols-2 gap-3 text-sm">
-                                            <div>
-                                                <div className="text-muted-foreground mb-1">Amount (ETH)</div>
-                                                <div className="rounded-md border border-sidebar-border/70 px-3 py-2 font-medium">
-                                                    {nft.price.eth.toFixed(4)} ETH
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="text-muted-foreground mb-1">Amount (USD)</div>
-                                                <div className="rounded-md border border-sidebar-border/70 px-3 py-2 font-medium">
-                                                    ${nft.price.usd.toLocaleString()}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* QR Code and Wallet Address */}
-                                        {selectedPaymentMethod.qr_code && selectedPaymentMethod.wallet_address && (
-                                            <div className="space-y-3">
-                                                <div className="text-sm font-medium">Send to this address</div>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="rounded-lg border border-sidebar-border/70 p-2 bg-background flex-shrink-0">
-                                                        <div dangerouslySetInnerHTML={{ __html: selectedPaymentMethod.qr_code }} />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0 text-xs">
-                                                        <div className="text-muted-foreground mb-2 font-medium">Wallet Address:</div>
-                                                        <div className="break-all font-mono text-foreground bg-muted p-2 rounded">
+                                                {selectedPaymentMethod.wallet_address && (
+                                                    <div className="space-y-2">
+                                                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Wallet Address</div>
+                                                        <div className="font-mono text-xs bg-background border rounded-lg p-3 break-all text-center select-all">
                                                             {selectedPaymentMethod.wallet_address}
                                                         </div>
                                                     </div>
-                                                </div>
+                                                )}
                                             </div>
-                                        )}
 
-                                        {/* Transaction ID */}
-                                        <div className="grid gap-2">
-                                            <div className="text-sm font-medium">Transaction ID</div>
-                                            <div className="flex items-center gap-2">
-                                                <Input
-                                                    value={trxId}
-                                                    onChange={(e) => setTrxId(e.target.value)}
-                                                    placeholder="Enter your transaction hash"
-                                                    className="flex-1"
-                                                />
-                                                <Button
-                                                    variant="secondary"
-                                                    onClick={async () => {
+                                            <div className="space-y-3">
+                                                <label className="text-sm font-medium">Transaction Hash</label>
+                                                <div className="flex gap-3">
+                                                    <Input
+                                                        placeholder="Enter transaction hash (0x...)"
+                                                        value={trxId}
+                                                        onChange={(e) => setTrxId(e.target.value)}
+                                                        className="font-mono text-sm h-12"
+                                                    />
+                                                    <Button variant="outline" className="h-12 px-6" onClick={async () => {
                                                         try {
-                                                            const txt = await navigator.clipboard.readText();
-                                                            setTrxId(txt);
-                                                        } catch { }
-                                                    }}
-                                                >
-                                                    Paste
-                                                </Button>
+                                                            const text = await navigator.clipboard.readText();
+                                                            setTrxId(text);
+                                                        } catch (e) { }
+                                                    }}>Paste</Button>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Please enter the transaction hash after completing the payment.
+                                                </p>
                                             </div>
-                                            <div className="text-xs text-muted-foreground">Enter your transaction hash for payment verification.</div>
                                         </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
-                                        <div className="text-xs text-muted-foreground">
-                                            Your order will be confirmed after payment verification. Network fees may apply.
+                    {/* Footer Action */}
+                    {step === 2 && (
+                        <div className="p-6 border-t bg-background/95 backdrop-blur z-10">
+                            <div className="max-w-2xl mx-auto w-full">
+                                <Button
+                                    className="w-full h-14 text-lg font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all"
+                                    onClick={handleConfirmPayment}
+                                    disabled={isProcessing || !selectedPaymentMethod || trxId.length < 5}
+                                >
+                                    {isProcessing ? (
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-5 w-5 border-3 border-current border-t-transparent rounded-full animate-spin" />
+                                            Processing Payment...
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="rounded-xl border border-sidebar-border/70 p-4 text-center text-muted-foreground">
-                                        Please select a payment method
-                                    </div>
-                                )}
-
-                                <DialogFooter className="gap-2 pt-1">
-                                    <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isProcessing}>Cancel</Button>
-                                    <Button
-                                        className="gap-2"
-                                        onClick={handleConfirmPayment}
-                                        disabled={isProcessing || !selectedPaymentMethod || trxId.trim().length < 8}
-                                    >
-                                        {isProcessing ? 'Processing...' : 'Confirm Payment'}
-                                    </Button>
-                                </DialogFooter>
+                                    ) : (
+                                        'Confirm Payment'
+                                    )}
+                                </Button>
                             </div>
                         </div>
                     )}

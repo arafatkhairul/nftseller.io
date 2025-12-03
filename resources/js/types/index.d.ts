@@ -25,10 +25,16 @@ export interface NavItem {
     badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline';
 }
 
-export interface SharedData {
+export interface SharedData extends PageProps {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    socialLinks: {
+        id: number;
+        platform: string;
+        url: string;
+        icon: string;
+    }[];
     sidebarOpen: boolean;
     [key: string]: unknown;
 }

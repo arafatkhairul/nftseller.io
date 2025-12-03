@@ -1,12 +1,11 @@
-import { Head, usePage } from '@inertiajs/react';
-import Header from '@/components/nft-marketplace/header';
-import HeroBanner from '@/components/nft-marketplace/hero-banner';
+import { Footer } from '@/components/footer';
 import CollectionBanner from '@/components/nft-marketplace/collection-banner';
-import NFTGrid from '@/components/nft-marketplace/nft-grid';
+import Header from '@/components/nft-marketplace/header';
 import { type NFTCardProps } from '@/components/nft-marketplace/nft-card';
 import NFTDetailsModal from '@/components/nft-marketplace/nft-details-modal';
-import { router } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import NFTGrid from '@/components/nft-marketplace/nft-grid';
+import { Head, router, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
 // Sample NFT data using real OpenSea image
 const realNFTImage = 'https://i2.seadn.io/hyperevm/0x9125e2d6827a00b0f8330d6ef7bef07730bac685/a95969c6d8d235c4459ed84d1067dd/7da95969c6d8d235c4459ed84d1067dd.png?w=350';
@@ -218,11 +217,19 @@ interface DatabaseNFT {
         id: number;
         name: string;
     };
+    category?: string;
     views: number;
     likes: number;
+    rarity?: string;
 }
 
-export default function NFTMarketplace({ nfts: dbNfts = [] }: { nfts?: DatabaseNFT[] }) {
+interface Category {
+    id: number;
+    name: string;
+    slug: string;
+}
+
+export default function NFTMarketplace({ nfts: dbNfts = [], categories = [] }: { nfts?: DatabaseNFT[], categories?: Category[] }) {
     const page = usePage<{ auth?: { user?: any } }>();
     const user = page.props.auth?.user || null;
 
@@ -230,6 +237,7 @@ export default function NFTMarketplace({ nfts: dbNfts = [] }: { nfts?: DatabaseN
     const [isLoading, setIsLoading] = useState(true);
     const [selectedNFT, setSelectedNFT] = useState<any | null>(null);
     const [detailsOpen, setDetailsOpen] = useState(false);
+    const [activeCategory, setActiveCategory] = useState('All');
 
     // Convert database NFTs to component format
     const convertedNFTs = dbNfts.length > 0
@@ -241,9 +249,16 @@ export default function NFTMarketplace({ nfts: dbNfts = [] }: { nfts?: DatabaseN
             creator: nft.creator?.name || 'Unknown Creator',
             likes: nft.likes,
             views: nft.views,
+            rarity: nft.rarity,
+            category: nft.category,
             isLiked: false
         }))
         : sampleNFTs;
+
+    // Filter NFTs based on active category
+    const filteredNFTs = activeCategory === 'All'
+        ? convertedNFTs
+        : convertedNFTs.filter(nft => nft.category === activeCategory);
 
     // Simulate data loading with a delay (in real scenario, data comes from server)
     useEffect(() => {
@@ -291,7 +306,13 @@ export default function NFTMarketplace({ nfts: dbNfts = [] }: { nfts?: DatabaseN
 
             <div className="min-h-screen bg-background bg-animated">
                 {/* Header */}
-                <Header user={user} onLoginClick={handleLogin} />
+                <Header
+                    user={user}
+                    onLoginClick={handleLogin}
+                    categories={categories}
+                    activeCategory={activeCategory}
+                    onCategoryChange={setActiveCategory}
+                />
 
                 {/* Main Container */}
                 <div className="max-w-7xl mx-auto px-4 lg:px-6 pt-6">
@@ -306,8 +327,8 @@ export default function NFTMarketplace({ nfts: dbNfts = [] }: { nfts?: DatabaseN
                     {/* NFT Grid */}
                     <div className="w-full">
                         <NFTGrid
-                            title={dbNfts.length > 0 && !isLoading ? "Featured NFTs" : "NFTS"}
-                            nfts={convertedNFTs}
+                            title={activeCategory === 'All' ? "Featured NFTs" : `${activeCategory} NFTs`}
+                            nfts={filteredNFTs}
                             showSeeAll={true}
                             onSeeAll={handleSeeAll}
                             onNFTLike={handleNFTLike}
@@ -329,6 +350,7 @@ export default function NFTMarketplace({ nfts: dbNfts = [] }: { nfts?: DatabaseN
                 nft={selectedNFT}
                 onPurchase={handleNFTPurchase}
             />
+            <Footer />
         </>
     );
 }

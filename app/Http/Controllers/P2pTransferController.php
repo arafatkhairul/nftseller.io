@@ -20,7 +20,7 @@ class P2pTransferController extends Controller
             'partner_address' => 'required|string',
             'partner_payment_method_id' => 'required|exists:payment_methods,id',
             'amount' => 'required|numeric|min:0.01',
-            'sender_address' => 'required|string',
+            'sender_address' => 'nullable|string',
             'network' => 'required|string',
         ]);
 

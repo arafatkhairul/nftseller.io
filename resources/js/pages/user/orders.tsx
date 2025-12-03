@@ -1,13 +1,13 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FiPackage, FiClock, FiCheckCircle, FiX, FiSend, FiArrowRight, FiCheck, FiCopy, FiArrowLeft } from 'react-icons/fi';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCheck, FiCheckCircle, FiClock, FiCopy, FiPackage, FiSend, FiX } from 'react-icons/fi';
 
 interface Order {
     id: number;
@@ -64,9 +64,35 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
     const [yourAddress, setYourAddress] = useState('');
     const [yourNetwork, setYourNetwork] = useState('');
 
-    // Step 3: Generated link
+    // Step 3: Generated link & Status
     const [generatedLink, setGeneratedLink] = useState('');
     const [linkCopied, setLinkCopied] = useState(false);
+    const [transferId, setTransferId] = useState<number | null>(null);
+    const [transferStatus, setTransferStatus] = useState('pending');
+    const [showAppealInput, setShowAppealInput] = useState(false);
+    const [appealReason, setAppealReason] = useState('');
+
+    // Polling for status updates
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+
+        if (p2pModalOpen && transferId && p2pStep === 3) {
+            interval = setInterval(async () => {
+                try {
+                    const response = await axios.get(`/api/p2p-transfer/${transferId}/status`);
+                    if (response.data.status !== transferStatus) {
+                        setTransferStatus(response.data.status);
+                    }
+                } catch (error) {
+                    console.error('Error polling status:', error);
+                }
+            }, 2000);
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [p2pModalOpen, transferId, p2pStep, transferStatus]);
 
     const handleMarkAsSent = (orderId: number) => {
         router.patch(`/admin/orders/${orderId}/status`, { status: 'sent' }, {
@@ -88,6 +114,10 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
         setYourNetwork('');
         setGeneratedLink('');
         setLinkCopied(false);
+        setTransferId(null);
+        setTransferStatus('pending');
+        setShowAppealInput(false);
+        setAppealReason('');
     };
 
     const closeP2pModal = () => {
@@ -99,7 +129,7 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
     const handleNextStep = async () => {
         if (p2pStep === 1 && partnerAddress && partnerPaymentMethod) {
             setP2pStep(2);
-        } else if (p2pStep === 2 && yourAmount && yourAddress && yourNetwork && selectedOrderForP2p) {
+        } else if (p2pStep === 2 && yourAmount && yourNetwork && selectedOrderForP2p) {
             // Save to database and generate link using axios
             try {
                 const response = await axios.post('/api/p2p-transfer/create', {
@@ -107,18 +137,44 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                     partner_address: partnerAddress,
                     partner_payment_method_id: partnerPaymentMethod,
                     amount: yourAmount,
-                    sender_address: yourAddress,
+                    sender_address: '', // Removed from UI
                     network: yourNetwork,
                 });
 
                 if (response.data.success) {
                     setGeneratedLink(response.data.link);
+                    setTransferId(response.data.transfer_id);
+                    setTransferStatus('pending');
                     setP2pStep(3);
                 }
             } catch (error) {
                 console.error('Error creating P2P transfer:', error);
             }
         }
+    };
+
+    const handleReleaseTransfer = () => {
+        if (!transferId) return;
+
+        router.post(`/p2p-transfer/${transferId}/release`, {}, {
+            onSuccess: () => {
+                setTransferStatus('released');
+                // Optionally close modal or show success state
+            }
+        });
+    };
+
+    const handleAppealTransfer = () => {
+        if (!transferId || !appealReason) return;
+
+        router.post(`/p2p-transfer/${transferId}/appeal`, {
+            reason: appealReason
+        }, {
+            onSuccess: () => {
+                setTransferStatus('appealed');
+                setShowAppealInput(false);
+            }
+        });
     };
 
     const copyLink = () => {
@@ -248,209 +304,321 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                     </div>
                 )}
 
-                {/* P2P Send Modal - Multi-Step */}
+                {/* P2P Send Modal - Multi-Step (Enhanced) */}
                 {p2pModalOpen && selectedOrderForP2p && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                        <div className="bg-card border border-border rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                        <div className="bg-background border border-border rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
                             {/* Header */}
-                            <div className="border-b border-border px-6 py-4 sticky top-0 bg-card z-10">
+                            <div className="border-b border-border px-6 py-5 bg-muted/30">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h2 className="text-xl font-bold text-foreground">P2P Send NFT</h2>
-                                        <p className="text-xs text-muted-foreground mt-1">
+                                        <h2 className="text-xl font-bold text-foreground tracking-tight">P2P Send NFT</h2>
+                                        <p className="text-xs text-muted-foreground mt-1 font-medium uppercase tracking-wider">
                                             Step {p2pStep} of 3
                                         </p>
                                     </div>
                                     <button
                                         onClick={closeP2pModal}
-                                        className="text-muted-foreground hover:text-foreground transition-colors"
+                                        className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                                     >
                                         <FiX className="w-5 h-5" />
                                     </button>
                                 </div>
 
                                 {/* Progress Bar */}
-                                <div className="mt-4 flex gap-2">
-                                    <div className={`h-1 flex-1 rounded-full ${p2pStep >= 1 ? 'bg-foreground' : 'bg-muted'}`} />
-                                    <div className={`h-1 flex-1 rounded-full ${p2pStep >= 2 ? 'bg-foreground' : 'bg-muted'}`} />
-                                    <div className={`h-1 flex-1 rounded-full ${p2pStep >= 3 ? 'bg-foreground' : 'bg-muted'}`} />
-                                </div>
-                            </div>
-
-                            {/* NFT Info */}
-                            <div className="px-6 pt-4">
-                                <div className="flex items-center gap-3 p-3 bg-accent rounded-lg border border-border">
-                                    {selectedOrderForP2p.nft_image && (
-                                        <img
-                                            src={selectedOrderForP2p.nft_image}
-                                            alt={selectedOrderForP2p.nft_name}
-                                            className="w-14 h-14 rounded-lg object-cover border border-border flex-shrink-0"
+                                <div className="mt-5 flex gap-2">
+                                    {[1, 2, 3].map((step) => (
+                                        <div
+                                            key={step}
+                                            className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${step <= p2pStep ? 'bg-primary' : 'bg-muted'
+                                                }`}
                                         />
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-foreground truncate">
-                                            {selectedOrderForP2p.nft_name}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {selectedOrderForP2p.total_price} ETH
-                                        </p>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
 
-                            {/* Content - Step 1: Partner's Payment Details */}
-                            {p2pStep === 1 && (
-                                <div className="px-6 py-6 space-y-5">
-                                    <div>
-                                        <h3 className="text-base font-semibold text-foreground mb-2">Partner's Payment Details</h3>
-                                        <p className="text-sm text-muted-foreground">
-                                            Enter your P2P partner's payment information
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <Label htmlFor="partner-address" className="text-sm font-medium">
-                                                Payment Address *
-                                            </Label>
-                                            <Input
-                                                id="partner-address"
-                                                placeholder="Enter wallet address"
-                                                value={partnerAddress}
-                                                onChange={(e) => setPartnerAddress(e.target.value)}
-                                                className="mt-1.5"
+                            {/* Scrollable Content */}
+                            <div className="flex-1 overflow-y-auto">
+                                {/* NFT Info */}
+                                <div className="px-6 pt-6">
+                                    <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-xl border border-border/50">
+                                        {selectedOrderForP2p.nft_image && (
+                                            <img
+                                                src={selectedOrderForP2p.nft_image}
+                                                alt={selectedOrderForP2p.nft_name}
+                                                className="w-16 h-16 rounded-xl object-cover border border-border/50 shadow-sm flex-shrink-0"
                                             />
-                                        </div>
-
-                                        <div>
-                                            <Label htmlFor="partner-method" className="text-sm font-medium">
-                                                Payment Method *
-                                            </Label>
-                                            <select
-                                                id="partner-method"
-                                                value={partnerPaymentMethod}
-                                                onChange={(e) => setPartnerPaymentMethod(e.target.value)}
-                                                className="mt-1.5 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                                            >
-                                                <option value="">Select payment method</option>
-                                                {paymentMethods.map((method) => (
-                                                    <option key={method.id} value={method.id}>
-                                                        {method.name}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-base font-semibold text-foreground truncate">
+                                                {selectedOrderForP2p.nft_name}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Badge variant="secondary" className="text-xs font-normal bg-background border-border/50">
+                                                    {selectedOrderForP2p.total_price} ETH
+                                                </Badge>
+                                                <span className="text-xs text-muted-foreground">#{selectedOrderForP2p.order_number}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            )}
 
-                            {/* Content - Step 2: Your Payment Details */}
-                            {p2pStep === 2 && (
-                                <div className="px-6 py-6 space-y-5">
-                                    <div>
-                                        <h3 className="text-base font-semibold text-foreground mb-2">Your Payment Details</h3>
-                                        <p className="text-sm text-muted-foreground">
-                                            Provide your payment information for the transfer
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-4">
+                                {/* Content - Step 1: Partner's Payment Details */}
+                                {p2pStep === 1 && (
+                                    <div className="px-6 py-6 space-y-6 animate-in slide-in-from-right-4 duration-300">
                                         <div>
-                                            <Label htmlFor="your-amount" className="text-sm font-medium">
-                                                Amount *
-                                            </Label>
-                                            <Input
-                                                id="your-amount"
-                                                type="number"
-                                                step="0.01"
-                                                placeholder="0.00"
-                                                value={yourAmount}
-                                                onChange={(e) => setYourAmount(e.target.value)}
-                                                className="mt-1.5"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <Label htmlFor="your-address" className="text-sm font-medium">
-                                                Your Payment Address *
-                                            </Label>
-                                            <Input
-                                                id="your-address"
-                                                placeholder="Enter your wallet address"
-                                                value={yourAddress}
-                                                onChange={(e) => setYourAddress(e.target.value)}
-                                                className="mt-1.5"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <Label htmlFor="your-network" className="text-sm font-medium">
-                                                Network *
-                                            </Label>
-                                            <select
-                                                id="your-network"
-                                                value={yourNetwork}
-                                                onChange={(e) => setYourNetwork(e.target.value)}
-                                                className="mt-1.5 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                                            >
-                                                <option value="">Select network</option>
-                                                {networks.map((network) => (
-                                                    <option key={network} value={network}>
-                                                        {network}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Content - Step 3: Generated Link */}
-                            {p2pStep === 3 && (
-                                <div className="px-6 py-6 space-y-5">
-                                    <div className="text-center">
-                                        <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <FiCheck className="w-8 h-8 text-green-600" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-foreground mb-2">Link Generated!</h3>
-                                        <p className="text-sm text-muted-foreground">
-                                            Share this link with your P2P partner
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <div className="p-4 bg-accent rounded-lg border border-border">
-                                            <p className="text-xs text-muted-foreground mb-2">Transfer Link</p>
-                                            <p className="text-xs font-mono text-foreground break-all">
-                                                {generatedLink}
+                                            <h3 className="text-lg font-semibold text-foreground mb-1">Partner's Payment Details</h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                Enter the destination details for this transfer.
                                             </p>
                                         </div>
 
-                                        <Button
-                                            onClick={copyLink}
-                                            variant="outline"
-                                            className="w-full gap-2"
-                                        >
-                                            <FiCopy className="w-4 h-4" />
-                                            {linkCopied ? 'Copied!' : 'Copy Link'}
-                                        </Button>
-                                    </div>
+                                        <div className="space-y-5">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="partner-address" className="text-sm font-medium">
+                                                    NFT Payment Address <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    id="partner-address"
+                                                    placeholder="0x..."
+                                                    value={partnerAddress}
+                                                    onChange={(e) => setPartnerAddress(e.target.value)}
+                                                    className="h-11 font-mono text-sm"
+                                                />
+                                            </div>
 
-                                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-                                        <p className="text-xs text-blue-700 dark:text-blue-400">
-                                            <strong>Note:</strong> Your partner can use this link to complete the P2P transfer. Make sure to verify all details before proceeding.
-                                        </p>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="partner-method" className="text-sm font-medium">
+                                                    Payment Method <span className="text-red-500">*</span>
+                                                </Label>
+                                                <div className="relative">
+                                                    <select
+                                                        id="partner-method"
+                                                        value={partnerPaymentMethod}
+                                                        onChange={(e) => setPartnerPaymentMethod(e.target.value)}
+                                                        className="w-full h-11 px-3 rounded-md border border-input bg-background text-sm appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                                    >
+                                                        <option value="">Select payment method</option>
+                                                        {paymentMethods.map((method) => (
+                                                            <option key={method.id} value={method.id}>
+                                                                {method.name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
+
+                                {/* Content - Step 2: Your Payment Details */}
+                                {p2pStep === 2 && (
+                                    <div className="px-6 py-6 space-y-6 animate-in slide-in-from-right-4 duration-300">
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-foreground mb-1">Transfer Details</h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                Confirm the amount and network for this transaction.
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-5">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="your-amount" className="text-sm font-medium">
+                                                    Amount (ETH) <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    id="your-amount"
+                                                    type="number"
+                                                    step="0.01"
+                                                    placeholder="0.00"
+                                                    value={yourAmount}
+                                                    onChange={(e) => setYourAmount(e.target.value)}
+                                                    className="h-11 font-mono text-sm"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="your-network" className="text-sm font-medium">
+                                                    Network <span className="text-red-500">*</span>
+                                                </Label>
+                                                <div className="relative">
+                                                    <select
+                                                        id="your-network"
+                                                        value={yourNetwork}
+                                                        onChange={(e) => setYourNetwork(e.target.value)}
+                                                        className="w-full h-11 px-3 rounded-md border border-input bg-background text-sm appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                                    >
+                                                        <option value="">Select network</option>
+                                                        {networks.map((network) => (
+                                                            <option key={network} value={network}>
+                                                                {network}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Content - Step 3: Generated Link & Status Polling */}
+                                {p2pStep === 3 && (
+                                    <div className="px-6 py-8 space-y-6 animate-in slide-in-from-right-4 duration-300">
+                                        {/* Status: Pending (Link Generated) */}
+                                        {transferStatus === 'pending' && (
+                                            <>
+                                                <div className="text-center space-y-3">
+                                                    <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto ring-8 ring-green-500/5">
+                                                        <FiCheck className="w-10 h-10 text-green-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-2xl font-bold text-foreground">Link Generated!</h3>
+                                                        <p className="text-muted-foreground mt-1">
+                                                            Waiting for partner to complete payment...
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    <div className="p-5 bg-muted/30 rounded-xl border border-border/50 group relative">
+                                                        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Transfer Link</p>
+                                                        <p className="text-sm font-mono text-foreground break-all pr-8">
+                                                            {generatedLink}
+                                                        </p>
+                                                    </div>
+
+                                                    <Button
+                                                        onClick={copyLink}
+                                                        variant={linkCopied ? "default" : "outline"}
+                                                        className="w-full h-12 gap-2 transition-all duration-300"
+                                                    >
+                                                        {linkCopied ? <FiCheck className="w-5 h-5" /> : <FiCopy className="w-5 h-5" />}
+                                                        {linkCopied ? 'Copied to Clipboard' : 'Copy Secure Link'}
+                                                    </Button>
+                                                </div>
+
+                                                <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-4 flex gap-3 items-start">
+                                                    <div className="mt-0.5 text-blue-600">
+                                                        <div className="animate-pulse w-2 h-2 rounded-full bg-blue-600"></div>
+                                                    </div>
+                                                    <p className="text-sm text-blue-600/90 leading-relaxed">
+                                                        Share this link with your partner. This window will update automatically when they complete the payment.
+                                                    </p>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {/* Status: Payment Completed (Action Required) */}
+                                        {transferStatus === 'payment_completed' && (
+                                            <div className="space-y-6 animate-in zoom-in-95 duration-300">
+                                                <div className="text-center space-y-3">
+                                                    <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto ring-8 ring-green-500/5">
+                                                        <FiCheckCircle className="w-10 h-10 text-green-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-2xl font-bold text-foreground">Payment Received!</h3>
+                                                        <p className="text-muted-foreground mt-1">
+                                                            Partner has marked the payment as completed.
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-muted/30 rounded-xl border border-border/50 p-4 space-y-3">
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-muted-foreground">Amount</span>
+                                                        <span className="font-medium">{selectedOrderForP2p.total_price} ETH</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-muted-foreground">Status</span>
+                                                        <span className="text-green-600 font-medium flex items-center gap-1">
+                                                            <FiCheckCircle className="w-3 h-3" /> Completed
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <Button
+                                                        onClick={handleReleaseTransfer}
+                                                        className="h-12 gap-2"
+                                                        variant="default"
+                                                    >
+                                                        <FiCheck className="w-5 h-5" />
+                                                        Release Now
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => setShowAppealInput(true)}
+                                                        variant="outline"
+                                                        className="h-12 gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                    >
+                                                        <FiAlertTriangle className="w-5 h-5" />
+                                                        Appeal
+                                                    </Button>
+                                                </div>
+
+                                                {showAppealInput && (
+                                                    <div className="space-y-3 pt-2 animate-in slide-in-from-top-2">
+                                                        <Label>Reason for Appeal</Label>
+                                                        <Input
+                                                            value={appealReason}
+                                                            onChange={(e) => setAppealReason(e.target.value)}
+                                                            placeholder="Describe the issue..."
+                                                        />
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                onClick={() => setShowAppealInput(false)}
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                onClick={handleAppealTransfer}
+                                                                disabled={!appealReason}
+                                                            >
+                                                                Submit Appeal
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Status: Released */}
+                                        {transferStatus === 'released' && (
+                                            <div className="text-center space-y-4 animate-in zoom-in-95 duration-300">
+                                                <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto ring-8 ring-green-500/5">
+                                                    <FiCheckCircle className="w-10 h-10 text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-2xl font-bold text-foreground">Transfer Complete!</h3>
+                                                    <p className="text-muted-foreground mt-1">
+                                                        Asset has been released to the partner.
+                                                    </p>
+                                                </div>
+                                                <Button onClick={closeP2pModal} className="w-full">
+                                                    Close
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Footer */}
-                            <div className="border-t border-border px-6 py-4 flex gap-3 sticky bottom-0 bg-card">
+                            <div className="border-t border-border px-6 py-5 bg-muted/30 flex gap-3 sticky bottom-0">
                                 {p2pStep > 1 && p2pStep < 3 && (
                                     <Button
                                         variant="outline"
                                         onClick={() => setP2pStep(p2pStep - 1)}
-                                        className="gap-2"
+                                        className="h-11 px-6 gap-2 hover:bg-background"
                                     >
                                         <FiArrowLeft className="w-4 h-4" />
                                         Back
@@ -462,17 +630,18 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                                         onClick={handleNextStep}
                                         disabled={
                                             (p2pStep === 1 && (!partnerAddress || !partnerPaymentMethod)) ||
-                                            (p2pStep === 2 && (!yourAmount || !yourAddress || !yourNetwork))
+                                            (p2pStep === 2 && (!yourAmount || !yourNetwork))
                                         }
-                                        className="flex-1 gap-2"
+                                        className="flex-1 h-11 gap-2 text-base font-medium shadow-lg shadow-primary/20"
                                     >
-                                        Next
+                                        Next Step
                                         <FiArrowRight className="w-4 h-4" />
                                     </Button>
                                 ) : (
                                     <Button
                                         onClick={() => handleMarkAsSent(selectedOrderForP2p.id)}
-                                        className="flex-1 gap-2"
+                                        className="flex-1 h-11 gap-2 text-base font-medium"
+                                        variant="default"
                                     >
                                         <FiCheck className="w-4 h-4" />
                                         Mark as Sent

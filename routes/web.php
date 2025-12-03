@@ -66,6 +66,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('p2p-transfer/{id}/payment-completed', [\App\Http\Controllers\P2pTransferController::class, 'markPaymentCompleted'])->name('p2p-transfer.payment-completed');
     Route::post('p2p-transfer/{id}/release', [\App\Http\Controllers\P2pTransferController::class, 'release'])->name('p2p-transfer.release');
     Route::post('p2p-transfer/{id}/appeal', [\App\Http\Controllers\P2pTransferController::class, 'appeal'])->name('p2p-transfer.appeal');
+    // Support Ticket Routes
+    Route::get('support-tickets', [\App\Http\Controllers\SupportTicketController::class, 'index'])->name('support.index');
+    Route::get('support-tickets/create', [\App\Http\Controllers\SupportTicketController::class, 'create'])->name('support.create');
+    Route::post('support-tickets', [\App\Http\Controllers\SupportTicketController::class, 'store'])->name('support.store');
+    Route::get('support-tickets/{ticket}', [\App\Http\Controllers\SupportTicketController::class, 'show'])->name('support.show');
+    Route::post('support-tickets/{ticket}/reply', [\App\Http\Controllers\SupportTicketController::class, 'reply'])->name('support.reply');
 });
 
 // P2P Transfer Public Routes
@@ -99,6 +105,23 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     // P2P Appeals Routes
     Route::get('p2p-appeals', [\App\Http\Controllers\P2pTransferController::class, 'adminAppeals'])->name('p2p-appeals');
     Route::post('p2p-appeals/{id}/resolve', [\App\Http\Controllers\P2pTransferController::class, 'resolveAppeal'])->name('p2p-appeals.resolve');
+
+    // Support Ticket Admin Routes
+    Route::get('/support-tickets', [\App\Http\Controllers\SupportTicketController::class, 'adminIndex'])->name('admin.support.index');
+    Route::get('/support-tickets/{id}', [\App\Http\Controllers\SupportTicketController::class, 'adminShow'])->name('admin.support.show');
+    Route::post('/support-tickets/{id}/reply', [\App\Http\Controllers\SupportTicketController::class, 'adminReply'])->name('admin.support.reply');
+    Route::put('/support-tickets/{id}/status', [\App\Http\Controllers\SupportTicketController::class, 'updateStatus'])->name('admin.support.status');
+
+    // Social Links
+    Route::get('/settings/social-links', [\App\Http\Controllers\SocialLinkController::class, 'index'])->name('settings.social-links');
+    Route::post('/settings/social-links', [\App\Http\Controllers\SocialLinkController::class, 'store'])->name('settings.social-links.store');
+    Route::put('/settings/social-links/{id}', [\App\Http\Controllers\SocialLinkController::class, 'update'])->name('settings.social-links.update');
+    Route::delete('/settings/social-links/{id}', [\App\Http\Controllers\SocialLinkController::class, 'destroy'])->name('settings.social-links.destroy');
+    // Categories
+    Route::get('/categories', [\App\Http\Controllers\CategoryController::class, 'index'])->name('categories.index');
+    Route::post('/categories', [\App\Http\Controllers\CategoryController::class, 'store'])->name('categories.store');
+    Route::put('/categories/{id}', [\App\Http\Controllers\CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{id}', [\App\Http\Controllers\CategoryController::class, 'destroy'])->name('categories.destroy');
 });
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

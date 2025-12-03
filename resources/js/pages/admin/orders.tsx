@@ -64,7 +64,7 @@ export default function AdminOrders({ orders }: Props) {
     };
 
     const getStatusOptions = (currentStatus: string) => {
-        return ['pending', 'completed', 'cancelled', 'failed', 'sent'].filter(s => s !== currentStatus);
+        return ['pending', 'completed', 'cancelled', 'failed'].filter(s => s !== currentStatus);
     };
 
     const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total_price), 0);
@@ -145,13 +145,7 @@ export default function AdminOrders({ orders }: Props) {
                     >
                         Completed ({orders.filter(o => o.status === 'completed').length})
                     </Button>
-                    <Button
-                        variant={filterStatus === 'sent' ? 'default' : 'outline'}
-                        onClick={() => setFilterStatus('sent')}
-                        size="sm"
-                    >
-                        P2P Sent ({orders.filter(o => o.status === 'sent').length})
-                    </Button>
+
                     <Button
                         variant={filterStatus === 'failed' ? 'default' : 'outline'}
                         onClick={() => setFilterStatus('failed')}
@@ -221,7 +215,7 @@ export default function AdminOrders({ orders }: Props) {
                                                     </td>
                                                     <td className="py-4 px-2 text-sm capitalize">{order.payment_method}</td>
                                                     <td className="py-4 px-2">
-                                                        <Badge className={`${config.color} border flex items-center gap-1 w-fit`}>
+                                                        <Badge className={`${config.color} flex items-center gap-1 w-fit`}>
                                                             <StatusIcon className="w-3 h-3" />
                                                             {config.label}
                                                         </Badge>

@@ -1,5 +1,4 @@
-import { NavFooter } from '@/components/nav-footer';
-import { NavMain } from '@/components/nav-main';
+
 import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
@@ -14,23 +13,19 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { type NavItem, type User } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { cn } from '@/lib/utils';
 import {
-    FaHome,
-    FaStore,
-    FaShoppingBag,
-    FaWallet,
-    FaClock,
-    FaCheckCircle,
-    FaPaperPlane,
-    FaCog,
-    FaHistory,
-    FaQuestionCircle,
-    FaUsers,
     FaChartBar,
+    FaCog,
+    FaHeadset,
+    FaHome,
+    FaShoppingBag,
+    FaStore,
+    FaUsers,
+    FaWallet
 } from 'react-icons/fa';
 import AppLogo from './app-logo';
 
@@ -60,19 +55,9 @@ const userOrdersNavItems: NavItem[] = [
 
 const userAccountNavItems: NavItem[] = [
     {
-        title: 'Wallet',
-        href: dashboard(),
-        icon: FaWallet,
-    },
-    {
-        title: 'Order History',
-        href: dashboard(),
-        icon: FaHistory,
-    },
-    {
-        title: 'Settings',
-        href: dashboard(),
-        icon: FaCog,
+        title: 'Support',
+        href: '/support-tickets',
+        icon: FaHeadset,
     },
 ];
 
@@ -107,9 +92,19 @@ const adminManagementNavItems: NavItem[] = [
         icon: FaShoppingBag,
     },
     {
+        title: 'Categories',
+        href: '/admin/categories',
+        icon: FaStore,
+    },
+    {
         title: 'Payment Methods',
         href: '/admin/payment-methods',
         icon: FaWallet,
+    },
+    {
+        title: 'Support Tickets',
+        href: '/admin/support-tickets',
+        icon: FaHeadset,
     },
 ];
 
@@ -121,13 +116,7 @@ const adminSettingsNavItems: NavItem[] = [
     },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Help Center',
-        href: '#',
-        icon: FaQuestionCircle,
-    },
-];
+
 
 // Render Navigation Group Component
 function NavGroup({
@@ -250,7 +239,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter className="border-t border-border p-3">
-                <NavFooter items={footerNavItems} className="mt-auto" />
+
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
