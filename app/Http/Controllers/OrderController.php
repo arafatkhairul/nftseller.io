@@ -141,6 +141,23 @@ class OrderController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        // Fetch P2P transfer details if available
+        $p2pTransfer = \App\Models\P2pTransfer::where('order_id', $order->id)->first();
+        $p2pData = null;
+
+        if ($p2pTransfer) {
+            $p2pData = [
+                'id' => $p2pTransfer->id,
+                'transfer_code' => $p2pTransfer->transfer_code,
+                'partner_address' => $p2pTransfer->partner_address,
+                'amount' => $p2pTransfer->amount,
+                'network' => $p2pTransfer->network,
+                'status' => $p2pTransfer->status,
+                'appeal_reason' => $p2pTransfer->appeal_reason,
+                'appealed_at' => $p2pTransfer->appealed_at ? $p2pTransfer->appealed_at->format('Y-m-d H:i') : null,
+            ];
+        }
+
         $orderData = [
             'id' => $order->id,
             'order_number' => $order->order_number,
@@ -155,6 +172,7 @@ class OrderController extends Controller
             'user_name' => $order->user->name,
             'user_email' => $order->user->email,
             'created_at' => $order->created_at->format('Y-m-d H:i'),
+            'p2p_transfer' => $p2pData,
         ];
 
         return Inertia::render('order-details', [
@@ -184,5 +202,77 @@ class OrderController extends Controller
         ]);
 
         return back()->with('success', 'Order status updated successfully!');
+    }
+
+    /**
+     * Submit manual sent request with address
+     */
+    public function submitSentRequest(Request $request, Order $order)
+    {
+        // Ensure user owns order
+        if ($order->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        $validated = $request->validate([
+            'sender_address' => 'required|string|max:255',
+        ]);
+
+        $order->update([
+            'status' => 'pending_sent',
+            'sender_address' => $validated['sender_address'],
+        ]);
+
+        return back()->with('success', 'Sent request submitted successfully. Admin will verify.');
+    }
+
+    /**
+     * Admin: Get pending sent requests
+     */
+    public function adminPendingSent()
+    {
+        $orders = Order::where('status', 'pending_sent')
+            ->with(['user', 'nft'])
+            ->latest()
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'user_name' => $order->user->name,
+                    'user_email' => $order->user->email,
+                    'nft_name' => $order->nft->name ?? 'Unknown',
+                    'nft_image' => $order->nft->image_path ? asset('storage/' . $order->nft->image_path) : null,
+                    'total_price' => $order->total_price,
+                    'sender_address' => $order->sender_address,
+                    'created_at' => $order->created_at->format('Y-m-d H:i'),
+                ];
+            });
+
+        return Inertia::render('admin/pending-sent', [
+            'orders' => $orders,
+        ]);
+    }
+
+    /**
+     * Admin: Approve sent request
+     */
+    public function approveSentRequest($id)
+    {
+        $order = Order::findOrFail($id);
+        $order->update(['status' => 'sent']);
+
+        return back()->with('success', 'Order marked as sent successfully.');
+    }
+
+    /**
+     * Admin: Reject sent request
+     */
+    public function rejectSentRequest($id)
+    {
+        $order = Order::findOrFail($id);
+        $order->update(['status' => 'sent_rejected']);
+
+        return back()->with('success', 'Sent request rejected.');
     }
 }

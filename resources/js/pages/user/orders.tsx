@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -45,32 +46,38 @@ const statusConfig = {
     completed: { color: 'bg-green-500/10 text-green-700 border-green-200', icon: FiCheckCircle, label: 'Completed' },
     cancelled: { color: 'bg-red-500/10 text-red-700 border-red-200', icon: FiX, label: 'Cancelled' },
     failed: { color: 'bg-red-500/10 text-red-700 border-red-200', icon: FiX, label: 'Failed' },
-    sent: { color: 'bg-blue-500/10 text-blue-700 border-blue-200', icon: FiCheckCircle, label: 'Sent (P2P)' },
+    sent: { color: 'bg-blue-500/10 text-blue-700 border-blue-200', icon: FiCheckCircle, label: 'Sent' },
+    appealed: { color: 'bg-orange-500/10 text-orange-700 border-orange-200', icon: FiAlertTriangle, label: 'Appealed' },
+    appeal_approved: { color: 'bg-green-500/10 text-green-700 border-green-200', icon: FiCheckCircle, label: 'Approved' },
+    appeal_rejected: { color: 'bg-red-900/10 text-red-900 border-red-500/50', icon: FiX, label: 'Restricted' },
+    pending_sent: { color: 'bg-purple-500/10 text-purple-700 border-purple-200', icon: FiClock, label: 'Pending Verification' },
+    sent_rejected: { color: 'bg-red-500/10 text-red-700 border-red-200', icon: FiX, label: 'Sent Rejected' },
 };
 
 const networks = ['TRC20', 'ERC20', 'BEP20', 'Polygon', 'Solana', 'Bitcoin'];
 
 export default function UserOrders({ orders, paymentMethods }: Props) {
+    // P2P Modal State
     const [p2pModalOpen, setP2pModalOpen] = useState(false);
     const [selectedOrderForP2p, setSelectedOrderForP2p] = useState<Order | null>(null);
-    const [p2pStep, setP2pStep] = useState(1); // 1: Partner Details, 2: Your Details, 3: Link Generated
-
-    // Step 1: Partner's payment details
+    const [p2pStep, setP2pStep] = useState(1);
     const [partnerAddress, setPartnerAddress] = useState('');
     const [partnerPaymentMethod, setPartnerPaymentMethod] = useState('');
-
-    // Step 2: Your payment details
     const [yourAmount, setYourAmount] = useState('');
     const [yourAddress, setYourAddress] = useState('');
     const [yourNetwork, setYourNetwork] = useState('');
-
-    // Step 3: Generated link & Status
     const [generatedLink, setGeneratedLink] = useState('');
     const [linkCopied, setLinkCopied] = useState(false);
     const [transferId, setTransferId] = useState<number | null>(null);
     const [transferStatus, setTransferStatus] = useState('pending');
     const [showAppealInput, setShowAppealInput] = useState(false);
     const [appealReason, setAppealReason] = useState('');
+
+    // Manual Sent Modal State
+    const [manualSentModalOpen, setManualSentModalOpen] = useState(false);
+    const [selectedOrderForManual, setSelectedOrderForManual] = useState<Order | null>(null);
+    const [manualSentAddress, setManualSentAddress] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
 
     // Polling for status updates
     useEffect(() => {
@@ -124,6 +131,41 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
         setP2pModalOpen(false);
         setSelectedOrderForP2p(null);
         setP2pStep(1);
+    };
+
+    // Manual Sent Functions
+    const openManualSentModal = (order: Order) => {
+        setSelectedOrderForManual(order);
+        setManualSentAddress('');
+        setIsVerifying(false);
+        setManualSentModalOpen(true);
+    };
+
+    const closeManualSentModal = () => {
+        setManualSentModalOpen(false);
+        setSelectedOrderForManual(null);
+        setManualSentAddress('');
+        setIsVerifying(false);
+    };
+
+    const submitManualSent = () => {
+        if (!selectedOrderForManual || !manualSentAddress) return;
+
+        setIsVerifying(true);
+
+        // Simulate verification delay
+        setTimeout(() => {
+            router.post(route('orders.sent-request', selectedOrderForManual.id), {
+                sender_address: manualSentAddress
+            }, {
+                onSuccess: () => {
+                    closeManualSentModal();
+                },
+                onError: () => {
+                    setIsVerifying(false);
+                }
+            });
+        }, 3000); // 3 seconds delay for animation
     };
 
     const handleNextStep = async () => {
@@ -210,7 +252,7 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                             const StatusIcon = config.icon;
 
                             return (
-                                <div key={order.id} className="group border border-border bg-card rounded-xl overflow-hidden hover:shadow-lg hover:border-foreground/20 transition-all duration-200">
+                                <div key={order.id} className={`group border border-border bg-card rounded-xl overflow-hidden hover:shadow-lg hover:border-foreground/20 transition-all duration-200 ${order.status === 'appeal_rejected' ? 'opacity-75 grayscale-[0.5]' : ''}`}>
                                     <Link href={`/orders/${order.id}`}>
                                         <div className="cursor-pointer">
                                             <div className="p-4">
@@ -267,8 +309,8 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                                         </div>
                                     </Link>
 
-                                    {/* Action Buttons - Only for Completed Orders */}
-                                    {order.status === 'completed' && (
+                                    {/* Action Buttons - For Completed or Appeal Approved Orders */}
+                                    {(order.status === 'completed' || order.status === 'appeal_approved') && (
                                         <div className="px-4 pb-4 flex gap-2 justify-end border-t border-border pt-3">
                                             <Button
                                                 size="sm"
@@ -282,7 +324,7 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                                             <Button
                                                 size="sm"
                                                 className="h-8 text-xs gap-1.5 px-3"
-                                                onClick={() => handleMarkAsSent(order.id)}
+                                                onClick={() => openManualSentModal(order)}
                                             >
                                                 <FiCheck className="w-3 h-3" />
                                                 Sent
@@ -304,7 +346,7 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                     </div>
                 )}
 
-                {/* P2P Send Modal - Multi-Step (Enhanced) */}
+                {/* P2P Send Modal */}
                 {p2pModalOpen && selectedOrderForP2p && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                         <div className="bg-background border border-border rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
@@ -552,7 +594,11 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                                                         Release Now
                                                     </Button>
                                                     <Button
-                                                        onClick={() => setShowAppealInput(true)}
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            setShowAppealInput(true);
+                                                        }}
                                                         variant="outline"
                                                         className="h-12 gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                                                     >
@@ -562,29 +608,53 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                                                 </div>
 
                                                 {showAppealInput && (
-                                                    <div className="space-y-3 pt-2 animate-in slide-in-from-top-2">
-                                                        <Label>Reason for Appeal</Label>
-                                                        <Input
-                                                            value={appealReason}
-                                                            onChange={(e) => setAppealReason(e.target.value)}
-                                                            placeholder="Describe the issue..."
-                                                        />
-                                                        <div className="flex justify-end gap-2">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                onClick={() => setShowAppealInput(false)}
-                                                            >
-                                                                Cancel
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="destructive"
-                                                                onClick={handleAppealTransfer}
-                                                                disabled={!appealReason}
-                                                            >
-                                                                Submit Appeal
-                                                            </Button>
+                                                    <div className="mt-4 p-5 border border-border rounded-xl bg-card shadow-sm animate-in slide-in-from-top-2 duration-300">
+                                                        <div className="flex items-start gap-3 mb-4">
+                                                            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
+                                                                <FiAlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-semibold text-foreground">Submit an Appeal</h4>
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    Please provide details about the issue. Our support team will review your case and mediate the dispute.
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="space-y-4">
+                                                            <div className="space-y-2">
+                                                                <Label htmlFor="appeal-reason" className="text-sm font-medium">
+                                                                    Reason for Appeal <span className="text-red-500">*</span>
+                                                                </Label>
+                                                                <Textarea
+                                                                    id="appeal-reason"
+                                                                    autoFocus
+                                                                    value={appealReason}
+                                                                    onChange={(e) => setAppealReason(e.target.value)}
+                                                                    placeholder="Describe the issue in detail (e.g., payment not received, wrong amount, etc.)..."
+                                                                    className="min-h-[120px] resize-none focus-visible:ring-red-500/20"
+                                                                />
+                                                            </div>
+
+                                                            <div className="flex items-center justify-end gap-3 pt-2">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    onClick={() => setShowAppealInput(false)}
+                                                                    className="hover:bg-muted"
+                                                                >
+                                                                    Cancel
+                                                                </Button>
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="destructive"
+                                                                    onClick={handleAppealTransfer}
+                                                                    disabled={!appealReason.trim()}
+                                                                    className="gap-2 shadow-sm"
+                                                                >
+                                                                    Submit Appeal
+                                                                </Button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}
@@ -646,6 +716,71 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                                         <FiCheck className="w-4 h-4" />
                                         Mark as Sent
                                     </Button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Manual Sent Modal */}
+                {manualSentModalOpen && selectedOrderForManual && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                        <div className="bg-background border border-border rounded-2xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                            {/* Header */}
+                            <div className="border-b border-border px-6 py-5 bg-muted/30 flex items-center justify-between">
+                                <h2 className="text-xl font-bold text-foreground tracking-tight">Send NFT</h2>
+                                <button
+                                    onClick={closeManualSentModal}
+                                    className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                                >
+                                    <FiX className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="p-6">
+                                {isVerifying ? (
+                                    <div className="flex flex-col items-center justify-center py-8 space-y-6 animate-in fade-in duration-500">
+                                        <div className="relative">
+                                            <div className="w-20 h-20 rounded-full border-4 border-primary/20 animate-spin border-t-primary"></div>
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <FiPackage className="w-8 h-8 text-primary animate-pulse" />
+                                            </div>
+                                        </div>
+                                        <div className="text-center space-y-2">
+                                            <h3 className="text-lg font-semibold">Verifying Blockchain Network...</h3>
+                                            <p className="text-sm text-muted-foreground">Please wait while we verify your transaction details.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="manual-address">Your NFT Address</Label>
+                                            <Input
+                                                id="manual-address"
+                                                placeholder="Enter your wallet address"
+                                                value={manualSentAddress}
+                                                onChange={(e) => setManualSentAddress(e.target.value)}
+                                                className="h-11 font-mono"
+                                            />
+                                        </div>
+
+                                        <div className="flex gap-3 pt-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={closeManualSentModal}
+                                                className="flex-1 h-11"
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button
+                                                onClick={submitManualSent}
+                                                disabled={!manualSentAddress}
+                                                className="flex-1 h-11"
+                                            >
+                                                Send
+                                            </Button>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         </div>

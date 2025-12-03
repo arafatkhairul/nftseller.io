@@ -47,6 +47,13 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'socialLinks' => \App\Models\SocialLink::where('is_active', true)->get(),
+            'unreadSupportCount' => $request->user() 
+                ? \App\Models\SupportTicket::where('user_id', $request->user()->id)
+                    ->whereHas('messages', function ($query) use ($request) {
+                        $query->where('user_id', '!=', $request->user()->id)
+                              ->where('is_read', false);
+                    })->count()
+                : 0,
         ];
     }
 }

@@ -139,6 +139,20 @@ export default function P2pTransfer({ transfer: initialTransfer }: Props) {
                     label: 'Under Appeal',
                     color: 'text-red-600',
                 };
+            case 'appeal_rejected':
+                return {
+                    variant: 'destructive' as const,
+                    icon: FiX,
+                    label: 'Appeal Rejected',
+                    color: 'text-red-600',
+                };
+            case 'cancelled':
+                return {
+                    variant: 'secondary' as const,
+                    icon: FiCheckCircle,
+                    label: 'Appeal Approved',
+                    color: 'text-blue-600',
+                };
             default:
                 return {
                     variant: 'default' as const,
@@ -281,6 +295,18 @@ export default function P2pTransfer({ transfer: initialTransfer }: Props) {
                                         <p className="text-xs font-medium text-foreground">Waiting for seller confirmation...</p>
                                     </div>
                                 </div>
+
+                                <div className="flex justify-center pt-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setShowAppealModal(true)}
+                                        className="text-muted-foreground hover:text-red-500"
+                                    >
+                                        <FiAlertTriangle className="w-4 h-4 mr-2" />
+                                        Report an Issue / Appeal
+                                    </Button>
+                                </div>
                             </div>
                         )}
 
@@ -299,7 +325,34 @@ export default function P2pTransfer({ transfer: initialTransfer }: Props) {
                                 <div className="text-center">
                                     <FiAlertTriangle className="w-12 h-12 text-yellow-600 mx-auto mb-2" />
                                     <p className="text-sm font-semibold text-yellow-600">Appeal Submitted</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Admin will review your case shortly</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Admin will review your case shortly.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {transfer.status === 'appeal_rejected' && (
+                            <div className="px-6 py-4 bg-red-500/10 border-t border-red-500/20">
+                                <div className="text-center">
+                                    <FiX className="w-12 h-12 text-red-600 mx-auto mb-2" />
+                                    <p className="text-sm font-semibold text-red-600">Appeal Rejected</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Your appeal has been rejected by the admin.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {transfer.status === 'cancelled' && (
+                            <div className="px-6 py-4 bg-blue-500/10 border-t border-blue-500/20">
+                                <div className="text-center">
+                                    <FiCheckCircle className="w-12 h-12 text-blue-600 mx-auto mb-2" />
+                                    <p className="text-sm font-semibold text-blue-600">Appeal Approved</p>
+                                    <p className="text-xs text-muted-foreground mt-1">You can now retry the transfer or place a new order.</p>
+                                    <Button
+                                        variant="link"
+                                        className="mt-2 text-blue-600"
+                                        onClick={() => window.location.href = '/orders'}
+                                    >
+                                        Go to Orders
+                                    </Button>
                                 </div>
                             </div>
                         )}

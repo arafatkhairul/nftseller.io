@@ -148,6 +148,9 @@ class P2pTransferController extends Controller
             'appealed_at' => now(),
         ]);
 
+        // Update order status to appealed so it shows in the list
+        $transfer->order->update(['status' => 'appealed']);
+
         return back()->with('success', 'Appeal submitted successfully. Admin will review your case.');
     }
 
@@ -175,7 +178,7 @@ class P2pTransferController extends Controller
      */
     public function adminAppeals()
     {
-        $appeals = P2pTransfer::where('status', 'appealed')
+        $appeals = P2pTransfer::whereNotNull('appealed_at')
             ->with(['order.nft', 'order.user', 'paymentMethod'])
             ->latest('appealed_at')
             ->get()
@@ -188,23 +191,58 @@ class P2pTransferController extends Controller
                     'nft_name' => $transfer->order->nft->name ?? 'Unknown',
                     'amount' => $transfer->amount,
                     'network' => $transfer->network,
+                    'status' => $transfer->status,
                     'appeal_reason' => $transfer->appeal_reason,
                     'appealed_at' => $transfer->appealed_at->format('Y-m-d H:i'),
                 ];
             });
 
-        return Inertia::render('admin/p2p-appeals', [
+        return Inertia::render('admin/p2p-appeals/index', [
             'appeals' => $appeals,
+        ]);
+    }
+
+    /**
+     * Admin: Show appeal details
+     */
+    public function adminAppealShow($id)
+    {
+        $transfer = P2pTransfer::with(['order.nft', 'order.user', 'paymentMethod'])
+            ->findOrFail($id);
+
+        $transferData = [
+            'id' => $transfer->id,
+            'order_number' => $transfer->order->order_number,
+            'user_name' => $transfer->order->user->name,
+            'user_email' => $transfer->order->user->email,
+            'nft_name' => $transfer->order->nft->name ?? 'Unknown',
+            'nft_image' => $transfer->order->nft->image_path ? asset('storage/' . $transfer->order->nft->image_path) : null,
+            'amount' => $transfer->amount,
+            'network' => $transfer->network,
+            'payment_method' => $transfer->paymentMethod->name,
+            'partner_address' => $transfer->partner_address,
+            'sender_address' => $transfer->sender_address,
+            'status' => $transfer->status,
+            'appeal_reason' => $transfer->appeal_reason,
+            'appealed_at' => $transfer->appealed_at ? $transfer->appealed_at->format('Y-m-d H:i') : null,
+            'created_at' => $transfer->created_at->format('Y-m-d H:i'),
+        ];
+
+        return Inertia::render('admin/p2p-appeals/show', [
+            'appeal' => $transferData,
         ]);
     }
 
     /**
      * Admin: Resolve appeal
      */
+    /**
+     * Admin: Resolve appeal
+     */
     public function resolveAppeal(Request $request, $id)
     {
         $validated = $request->validate([
-            'action' => 'required|in:release,cancel',
+            'action' => 'required|in:approve,reject',
         ]);
 
         $transfer = P2pTransfer::findOrFail($id);
@@ -213,15 +251,51 @@ class P2pTransferController extends Controller
             return back()->with('error', 'Transfer is not appealed');
         }
 
-        if ($validated['action'] === 'release') {
-            $transfer->update(['status' => 'released']);
-            $transfer->order->update(['status' => 'sent']);
-            $message = 'Transfer released successfully';
-        } else {
+        if ($validated['action'] === 'approve') {
+            // Approve appeal: User can try again.
+            // We cancel the current P2P transfer and set order status to appeal_approved
             $transfer->update(['status' => 'cancelled']);
-            $message = 'Transfer cancelled successfully';
+            $transfer->order->update(['status' => 'appeal_approved']);
+            $message = 'Appeal approved. User can now retry the transfer.';
+        } else {
+            // Reject appeal: Transfer failed/blocked.
+            $transfer->update(['status' => 'appeal_rejected']);
+            $transfer->order->update(['status' => 'appeal_rejected']);
+            $message = 'Appeal rejected. Transfer marked as rejected.';
         }
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Admin: Ask question (Create Support Ticket)
+     */
+    public function askQuestion(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'question' => 'required|string',
+        ]);
+
+        $transfer = P2pTransfer::with('order.user')->findOrFail($id);
+        $user = $transfer->order->user;
+
+        // Create Support Ticket
+        $ticket = \App\Models\SupportTicket::create([
+            'user_id' => $user->id,
+            'ticket_unique_id' => '#' . strtoupper(Str::random(8)),
+            'subject' => 'Question regarding P2P Transfer #' . $transfer->order->order_number,
+            'priority' => 'high',
+            'status' => 'open',
+            'p2p_transfer_id' => $transfer->id,
+        ]);
+
+        // Add Admin Message
+        \App\Models\SupportTicketMessage::create([
+            'support_ticket_id' => $ticket->id,
+            'user_id' => auth()->id(), // Admin ID
+            'message' => $validated['question'],
+        ]);
+
+        return back()->with('success', 'Question sent. Support ticket created.');
     }
 }

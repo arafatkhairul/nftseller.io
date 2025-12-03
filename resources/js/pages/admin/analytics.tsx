@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
+import { Head } from '@inertiajs/react';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -14,7 +15,33 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function AdminAnalytics() {
+interface Stats {
+    totalUsers: number;
+    newUsersToday: number;
+    totalOrders: number;
+    ordersToday: number;
+    totalRevenue: number;
+    revenueToday: number;
+}
+
+interface ChartData {
+    name: string;
+    total: number;
+}
+
+interface Props {
+    stats: Stats;
+    chartData: ChartData[];
+}
+
+export default function AdminAnalytics({ stats, chartData }: Props) {
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+        }).format(value);
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Analytics" />
@@ -26,49 +53,96 @@ export default function AdminAnalytics() {
                     </p>
                 </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Daily Active Users</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">1,234</div>
-                        <p className="text-xs text-muted-foreground">+5% from yesterday</p>
-                    </CardContent>
-                </Card>
+                <div className="grid gap-4 md:grid-cols-3">
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
+                            <p className="text-xs text-muted-foreground">
+                                +{stats.newUsersToday} new users today
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.totalOrders.toLocaleString()}</div>
+                            <p className="text-xs text-muted-foreground">
+                                +{stats.ordersToday} orders today
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+                            <p className="text-xs text-muted-foreground">
+                                +{formatCurrency(stats.revenueToday)} today
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
 
                 <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Orders Today</CardTitle>
+                    <CardHeader>
+                        <CardTitle>Revenue Trends</CardTitle>
+                        <CardDescription>Last 7 days performance</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">89</div>
-                        <p className="text-xs text-muted-foreground">+12% from last week</p>
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart
+                                    data={chartData}
+                                    margin={{
+                                        top: 10,
+                                        right: 30,
+                                        left: 0,
+                                        bottom: 0,
+                                    }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(value) => `$${value}`}
+                                    />
+                                    <Tooltip
+                                        formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                                        contentStyle={{
+                                            backgroundColor: 'hsl(var(--background))',
+                                            borderColor: 'hsl(var(--border))',
+                                            borderRadius: 'var(--radius)',
+                                        }}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="total"
+                                        stroke="hsl(var(--primary))"
+                                        fill="hsl(var(--primary))"
+                                        fillOpacity={0.2}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
                     </CardContent>
                 </Card>
-
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">3.28%</div>
-                        <p className="text-xs text-muted-foreground">+0.5% improvement</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Revenue Trends</CardTitle>
-                    <CardDescription>Last 30 days performance</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="h-64 flex items-center justify-center bg-muted/50 rounded-lg">
-                        <p className="text-muted-foreground">Chart visualization would go here</p>
-                    </div>
-                </CardContent>
-            </Card>
             </div>
         </AppLayout>
     );

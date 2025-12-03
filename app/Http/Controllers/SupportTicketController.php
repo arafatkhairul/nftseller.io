@@ -67,6 +67,12 @@ class SupportTicketController extends Controller
     {
         $ticket = SupportTicket::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
         
+        // Mark unread messages from admin as read
+        $ticket->messages()
+            ->where('user_id', '!=', auth()->id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
         $messages = $ticket->messages()->with('user')->oldest()->get()->map(function ($message) {
             return [
                 'id' => $message->id,
@@ -139,6 +145,12 @@ class SupportTicketController extends Controller
     {
         $ticket = SupportTicket::with('user')->findOrFail($id);
 
+        // Mark unread messages from user as read
+        $ticket->messages()
+            ->where('user_id', '!=', auth()->id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
         $messages = $ticket->messages()->with('user')->oldest()->get()->map(function ($message) {
             return [
                 'id' => $message->id,
@@ -195,5 +207,13 @@ class SupportTicketController extends Controller
         $ticket->update(['status' => $request->status]);
 
         return back()->with('success', 'Status updated successfully.');
+    }
+
+    public function destroy($id)
+    {
+        $ticket = SupportTicket::findOrFail($id);
+        $ticket->delete();
+
+        return redirect()->route('admin.support.index')->with('success', 'Ticket deleted successfully.');
     }
 }

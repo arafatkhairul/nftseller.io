@@ -15,6 +15,7 @@ class Order extends Model
         'quantity',
         'payment_method',
         'transaction_id',
+        'sender_address',
         'status',
         'notes',
     ];

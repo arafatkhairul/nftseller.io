@@ -1,8 +1,18 @@
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link } from '@inertiajs/react';
-import { FaTicketAlt } from 'react-icons/fa';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { FaTicketAlt, FaTrash } from 'react-icons/fa';
 
 interface Ticket {
     id: number;
@@ -20,6 +30,27 @@ interface Props {
 }
 
 export default function AdminSupportIndex({ tickets }: Props) {
+    const [deletingTicket, setDeletingTicket] = useState<Ticket | null>(null);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+    const handleDelete = (e: React.MouseEvent, ticket: Ticket) => {
+        e.preventDefault(); // Prevent navigation to ticket details
+        e.stopPropagation();
+        setDeletingTicket(ticket);
+        setIsDeleteOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (!deletingTicket) return;
+
+        router.delete(route('admin.support.destroy', deletingTicket.id), {
+            onSuccess: () => {
+                setIsDeleteOpen(false);
+                setDeletingTicket(null);
+            },
+        });
+    };
+
     return (
         <AppLayout breadcrumbs={[
             { title: 'Admin', href: '/admin/dashboard' },
@@ -42,31 +73,43 @@ export default function AdminSupportIndex({ tickets }: Props) {
                         {tickets.length > 0 ? (
                             <div className="space-y-4">
                                 {tickets.map((ticket) => (
-                                    <Link key={ticket.id} href={`/admin/support-tickets/${ticket.id}`}>
-                                        <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer">
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-semibold">{ticket.subject}</span>
-                                                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">{ticket.ticket_unique_id}</span>
+                                    <div key={ticket.id} className="relative group">
+                                        <Link href={`/admin/support-tickets/${ticket.id}`}>
+                                            <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer pr-16">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-semibold">{ticket.subject}</span>
+                                                        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">{ticket.ticket_unique_id}</span>
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground mt-1">
+                                                        By {ticket.user_name} • Last updated {ticket.last_updated}
+                                                    </div>
                                                 </div>
-                                                <div className="text-sm text-muted-foreground mt-1">
-                                                    By {ticket.user_name} • Last updated {ticket.last_updated}
+                                                <div className="flex items-center gap-3">
+                                                    <Badge variant={ticket.priority === 'high' ? 'destructive' : 'secondary'}>
+                                                        {ticket.priority}
+                                                    </Badge>
+                                                    <Badge className={
+                                                        ticket.status === 'open' ? 'bg-green-500 hover:bg-green-600' :
+                                                            ticket.status === 'in_progress' ? 'bg-blue-500 hover:bg-blue-600' :
+                                                                'bg-gray-500 hover:bg-gray-600'
+                                                    }>
+                                                        {ticket.status.replace('_', ' ')}
+                                                    </Badge>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <Badge variant={ticket.priority === 'high' ? 'destructive' : 'secondary'}>
-                                                    {ticket.priority}
-                                                </Badge>
-                                                <Badge className={
-                                                    ticket.status === 'open' ? 'bg-green-500 hover:bg-green-600' :
-                                                        ticket.status === 'in_progress' ? 'bg-blue-500 hover:bg-blue-600' :
-                                                            'bg-gray-500 hover:bg-gray-600'
-                                                }>
-                                                    {ticket.status.replace('_', ' ')}
-                                                </Badge>
-                                            </div>
+                                        </Link>
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={(e) => handleDelete(e, ticket)}
+                                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                            >
+                                                <FaTrash className="w-4 h-4" />
+                                            </Button>
                                         </div>
-                                    </Link>
+                                    </div>
                                 ))}
                             </div>
                         ) : (
@@ -79,6 +122,26 @@ export default function AdminSupportIndex({ tickets }: Props) {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Ticket</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this support ticket? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={confirmDelete}>
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

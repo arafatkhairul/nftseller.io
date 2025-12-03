@@ -1,4 +1,3 @@
-
 import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
@@ -19,7 +18,9 @@ import { type NavItem, type User } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import {
     FaChartBar,
+    FaClock,
     FaCog,
+    FaExclamationTriangle,
     FaHeadset,
     FaHome,
     FaShoppingBag,
@@ -87,6 +88,11 @@ const adminManagementNavItems: NavItem[] = [
         icon: FaShoppingBag,
     },
     {
+        title: 'Pending Sent',
+        href: '/admin/orders/pending-sent',
+        icon: FaClock,
+    },
+    {
         title: 'NFTs',
         href: '/admin/nfts',
         icon: FaShoppingBag,
@@ -100,6 +106,11 @@ const adminManagementNavItems: NavItem[] = [
         title: 'Payment Methods',
         href: '/admin/payment-methods',
         icon: FaWallet,
+    },
+    {
+        title: 'P2P Appeals',
+        href: '/admin/p2p-appeals',
+        icon: FaExclamationTriangle,
     },
     {
         title: 'Support Tickets',
@@ -200,9 +211,22 @@ function NavGroup({
 }
 
 export function AppSidebar() {
-    const page = usePage<{ auth: { user: User } }>();
+    const page = usePage<{ auth: { user: User }, unreadSupportCount?: number }>();
     const user = page.props.auth.user;
     const isAdmin = user.role === 'admin';
+    const unreadCount = page.props.unreadSupportCount || 0;
+
+    // Update userAccountNavItems with badge
+    const updatedUserAccountNavItems = userAccountNavItems.map(item => {
+        if (item.title === 'Support' && unreadCount > 0) {
+            return {
+                ...item,
+                badge: unreadCount.toString(),
+                badgeVariant: 'destructive' as const,
+            };
+        }
+        return item;
+    });
 
     return (
         <Sidebar collapsible="icon" variant="inset" className="border-r border-border bg-card">
@@ -233,7 +257,7 @@ export function AppSidebar() {
                     <>
                         <NavGroup label="Main" items={userMainNavItems} />
                         <NavGroup label="Orders" items={userOrdersNavItems} />
-                        <NavGroup label="Account" items={userAccountNavItems} />
+                        <NavGroup label="Account" items={updatedUserAccountNavItems} />
                     </>
                 )}
             </SidebarContent>

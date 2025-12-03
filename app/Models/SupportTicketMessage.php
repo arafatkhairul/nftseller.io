@@ -11,6 +11,7 @@ class SupportTicketMessage extends Model
         'user_id',
         'message',
         'attachment',
+        'is_read',
     ];
 
     public function ticket()

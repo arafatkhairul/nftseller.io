@@ -61,6 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('orders', [\App\Http\Controllers\OrderController::class, 'userOrders'])->name('orders.index');
     Route::post('orders', [\App\Http\Controllers\OrderController::class, 'store'])->name('orders.store');
     Route::get('orders/{order}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
+    Route::post('orders/{order}/sent-request', [\App\Http\Controllers\OrderController::class, 'submitSentRequest'])->name('orders.sent-request');
 
     // P2P Transfer Routes (authenticated)
     Route::post('p2p-transfer/{id}/payment-completed', [\App\Http\Controllers\P2pTransferController::class, 'markPaymentCompleted'])->name('p2p-transfer.payment-completed');
@@ -86,7 +87,12 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('dashboard', [\App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('analytics', [\App\Http\Controllers\AdminController::class, 'analytics'])->name('analytics');
     Route::get('users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users');
+    Route::put('users/{user}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
+    Route::delete('users/{user}', [\App\Http\Controllers\AdminController::class, 'destroyUser'])->name('users.destroy');
     Route::get('orders', [\App\Http\Controllers\OrderController::class, 'adminOrders'])->name('orders');
+    Route::get('orders/pending-sent', [\App\Http\Controllers\OrderController::class, 'adminPendingSent'])->name('orders.pending-sent');
+    Route::post('orders/{id}/approve-sent', [\App\Http\Controllers\OrderController::class, 'approveSentRequest'])->name('orders.approve-sent');
+    Route::post('orders/{id}/reject-sent', [\App\Http\Controllers\OrderController::class, 'rejectSentRequest'])->name('orders.reject-sent');
     Route::patch('orders/{order}/status', [\App\Http\Controllers\OrderController::class, 'updateStatus'])->name('orders.updateStatus');
     Route::get('settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
 
@@ -103,14 +109,17 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::delete('payment-methods/{paymentMethod}', [\App\Http\Controllers\PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
 
     // P2P Appeals Routes
-    Route::get('p2p-appeals', [\App\Http\Controllers\P2pTransferController::class, 'adminAppeals'])->name('p2p-appeals');
+    Route::get('p2p-appeals', [\App\Http\Controllers\P2pTransferController::class, 'adminAppeals'])->name('p2p-appeals.index');
+    Route::get('p2p-appeals/{id}', [\App\Http\Controllers\P2pTransferController::class, 'adminAppealShow'])->name('p2p-appeals.show');
     Route::post('p2p-appeals/{id}/resolve', [\App\Http\Controllers\P2pTransferController::class, 'resolveAppeal'])->name('p2p-appeals.resolve');
+    Route::post('p2p-appeals/{id}/ask-question', [\App\Http\Controllers\P2pTransferController::class, 'askQuestion'])->name('p2p-appeals.ask-question');
 
     // Support Ticket Admin Routes
-    Route::get('/support-tickets', [\App\Http\Controllers\SupportTicketController::class, 'adminIndex'])->name('admin.support.index');
-    Route::get('/support-tickets/{id}', [\App\Http\Controllers\SupportTicketController::class, 'adminShow'])->name('admin.support.show');
-    Route::post('/support-tickets/{id}/reply', [\App\Http\Controllers\SupportTicketController::class, 'adminReply'])->name('admin.support.reply');
-    Route::put('/support-tickets/{id}/status', [\App\Http\Controllers\SupportTicketController::class, 'updateStatus'])->name('admin.support.status');
+    Route::get('/support-tickets', [\App\Http\Controllers\SupportTicketController::class, 'adminIndex'])->name('support.index');
+    Route::get('/support-tickets/{id}', [\App\Http\Controllers\SupportTicketController::class, 'adminShow'])->name('support.show');
+    Route::post('/support-tickets/{id}/reply', [\App\Http\Controllers\SupportTicketController::class, 'adminReply'])->name('support.reply');
+    Route::put('/support-tickets/{id}/status', [\App\Http\Controllers\SupportTicketController::class, 'updateStatus'])->name('support.status');
+    Route::delete('/support-tickets/{id}', [\App\Http\Controllers\SupportTicketController::class, 'destroy'])->name('support.destroy');
 
     // Social Links
     Route::get('/settings/social-links', [\App\Http\Controllers\SocialLinkController::class, 'index'])->name('settings.social-links');

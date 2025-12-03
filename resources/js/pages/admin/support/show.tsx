@@ -56,7 +56,7 @@ export default function AdminSupportShow({ ticket, messages }: Props) {
     };
 
     const handleStatusChange = (value: string) => {
-        router.patch(`/admin/support-tickets/${ticket.id}/status`, {
+        router.put(route('admin.support.status', ticket.id), {
             status: value
         }, {
             preserveScroll: true,

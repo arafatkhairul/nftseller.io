@@ -12,6 +12,7 @@ class SupportTicket extends Model
         'subject',
         'status',
         'priority',
+        'p2p_transfer_id',
     ];
 
     public function user()
