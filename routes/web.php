@@ -5,10 +5,6 @@ use Inertia\Inertia;
 
 Route::get('/', [\App\Http\Controllers\NftController::class, 'index'])->name('home');
 
-Route::get('/welcome', function () {
-    return Inertia::render('welcome');
-})->name('welcome');
-
 Route::get('/nft-marketplace', [\App\Http\Controllers\NftController::class, 'index'])->name('nft-marketplace');
 
 // Public API routes
@@ -36,7 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     'order_number' => $order->order_number,
                     'nft_id' => $order->nft_id,
                     'nft_name' => $order->nft->name ?? 'Unknown',
-                    'nft_image' => $order->nft->image_path ? asset('storage/' . $order->nft->image_path) : null,
+                    'nft_image' => $order->nft->image_path ? asset('storage/'.$order->nft->image_path) : null,
                     'total_price' => $order->total_price,
                     'quantity' => $order->quantity,
                     'payment_method' => $order->payment_method,
@@ -64,9 +60,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('orders/{order}/sent-request', [\App\Http\Controllers\OrderController::class, 'submitSentRequest'])->name('orders.sent-request');
 
     // P2P Transfer Routes (authenticated)
-    Route::post('p2p-transfer/{id}/payment-completed', [\App\Http\Controllers\P2pTransferController::class, 'markPaymentCompleted'])->name('p2p-transfer.payment-completed');
     Route::post('p2p-transfer/{id}/release', [\App\Http\Controllers\P2pTransferController::class, 'release'])->name('p2p-transfer.release');
-    Route::post('p2p-transfer/{id}/appeal', [\App\Http\Controllers\P2pTransferController::class, 'appeal'])->name('p2p-transfer.appeal');
     // Support Ticket Routes
     Route::get('support-tickets', [\App\Http\Controllers\SupportTicketController::class, 'index'])->name('support.index');
     Route::get('support-tickets/create', [\App\Http\Controllers\SupportTicketController::class, 'create'])->name('support.create');
@@ -77,6 +71,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // P2P Transfer Public Routes
 Route::get('p2p-transfer/{code}', [\App\Http\Controllers\P2pTransferController::class, 'show'])->name('p2p-transfer.show');
+Route::post('p2p-transfer/{code}/payment-completed', [\App\Http\Controllers\P2pTransferController::class, 'markPaymentCompleted'])->name('p2p-transfer.payment-completed');
+Route::post('p2p-transfer/{id}/appeal', [\App\Http\Controllers\P2pTransferController::class, 'appeal'])->name('p2p-transfer.appeal');
 
 // P2P Transfer API Routes
 Route::post('api/p2p-transfer/create', [\App\Http\Controllers\P2pTransferController::class, 'create'])->middleware('auth');
@@ -131,6 +127,24 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('/categories', [\App\Http\Controllers\CategoryController::class, 'store'])->name('categories.store');
     Route::put('/categories/{id}', [\App\Http\Controllers\CategoryController::class, 'update'])->name('categories.update');
     Route::delete('/categories/{id}', [\App\Http\Controllers\CategoryController::class, 'destroy'])->name('categories.destroy');
+
+    // Artists
+    Route::get('/artists', [\App\Http\Controllers\ArtistController::class, 'index'])->name('artists.index');
+    Route::post('/artists', [\App\Http\Controllers\ArtistController::class, 'store'])->name('artists.store');
+    Route::post('/artists/{id}', [\App\Http\Controllers\ArtistController::class, 'update'])->name('artists.update'); // Using POST for file upload with method spoofing if needed, or just handle as POST
+    Route::delete('/artists/{id}', [\App\Http\Controllers\ArtistController::class, 'destroy'])->name('artists.destroy');
+
+    // Blockchains
+    Route::get('/blockchains', [\App\Http\Controllers\BlockchainController::class, 'index'])->name('blockchains.index');
+    Route::post('/blockchains', [\App\Http\Controllers\BlockchainController::class, 'store'])->name('blockchains.store');
+    Route::post('/blockchains/{id}', [\App\Http\Controllers\BlockchainController::class, 'update'])->name('blockchains.update');
+    Route::delete('/blockchains/{id}', [\App\Http\Controllers\BlockchainController::class, 'destroy'])->name('blockchains.destroy');
+
+    // Hero Banners
+    Route::resource('hero-banners', \App\Http\Controllers\HeroBannerController::class);
+
+    // P2P Networks
+    Route::resource('p2p-networks', \App\Http\Controllers\Admin\P2pNetworkController::class);
 });
-require __DIR__ . '/settings.php';
-require __DIR__ . '/auth.php';
+require __DIR__.'/settings.php';
+require __DIR__.'/auth.php';

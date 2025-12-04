@@ -14,6 +14,7 @@ class Nft extends Model
         'price',
         'quantity',
         'blockchain',
+        'blockchain_id',
         'contract_address',
         'token_id',
         'status',
@@ -21,6 +22,7 @@ class Nft extends Model
         'views',
         'likes',
         'category_id',
+        'artist_id',
         'rarity',
     ];
 
@@ -42,5 +44,15 @@ class Nft extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function artist(): BelongsTo
+    {
+        return $this->belongsTo(Artist::class);
+    }
+
+    public function blockchainRelation(): BelongsTo
+    {
+        return $this->belongsTo(Blockchain::class, 'blockchain_id');
     }
 }

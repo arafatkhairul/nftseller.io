@@ -46,9 +46,20 @@ class OrderController extends Controller
                 ];
             });
 
+        $networks = \App\Models\P2pNetwork::where('is_active', true)
+            ->get()
+            ->map(function ($network) {
+                return [
+                    'id' => $network->id,
+                    'name' => $network->name,
+                    'currency_symbol' => $network->currency_symbol,
+                ];
+            });
+
         return Inertia::render('user/orders', [
             'orders' => $orders,
             'paymentMethods' => $paymentMethods,
+            'networks' => $networks,
         ]);
     }
 

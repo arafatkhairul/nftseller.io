@@ -32,9 +32,16 @@ interface PaymentMethod {
     wallet_address: string;
 }
 
+interface Network {
+    id: number;
+    name: string;
+    currency_symbol: string;
+}
+
 interface Props {
     orders: Order[];
     paymentMethods: PaymentMethod[];
+    networks: Network[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -54,9 +61,7 @@ const statusConfig = {
     sent_rejected: { color: 'bg-red-500/10 text-red-700 border-red-200', icon: FiX, label: 'Sent Rejected' },
 };
 
-const networks = ['TRC20', 'ERC20', 'BEP20', 'Polygon', 'Solana', 'Bitcoin'];
-
-export default function UserOrders({ orders, paymentMethods }: Props) {
+export default function UserOrders({ orders, paymentMethods, networks }: Props) {
     // P2P Modal State
     const [p2pModalOpen, setP2pModalOpen] = useState(false);
     const [selectedOrderForP2p, setSelectedOrderForP2p] = useState<Order | null>(null);
@@ -78,6 +83,9 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
     const [selectedOrderForManual, setSelectedOrderForManual] = useState<Order | null>(null);
     const [manualSentAddress, setManualSentAddress] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
+
+    const selectedNetworkObj = networks.find(n => n.name === yourNetwork);
+    const currencySymbol = selectedNetworkObj ? selectedNetworkObj.currency_symbol : 'ETH';
 
     // Polling for status updates
     useEffect(() => {
@@ -468,21 +476,6 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
 
                                         <div className="space-y-5">
                                             <div className="space-y-2">
-                                                <Label htmlFor="your-amount" className="text-sm font-medium">
-                                                    Amount (ETH) <span className="text-red-500">*</span>
-                                                </Label>
-                                                <Input
-                                                    id="your-amount"
-                                                    type="number"
-                                                    step="0.01"
-                                                    placeholder="0.00"
-                                                    value={yourAmount}
-                                                    onChange={(e) => setYourAmount(e.target.value)}
-                                                    className="h-11 font-mono text-sm"
-                                                />
-                                            </div>
-
-                                            <div className="space-y-2">
                                                 <Label htmlFor="your-network" className="text-sm font-medium">
                                                     Network <span className="text-red-500">*</span>
                                                 </Label>
@@ -495,8 +488,8 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                                                     >
                                                         <option value="">Select network</option>
                                                         {networks.map((network) => (
-                                                            <option key={network} value={network}>
-                                                                {network}
+                                                            <option key={network.id} value={network.name}>
+                                                                {network.name}
                                                             </option>
                                                         ))}
                                                     </select>
@@ -504,6 +497,21 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                                                     </div>
                                                 </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="your-amount" className="text-sm font-medium">
+                                                    Amount ({currencySymbol}) <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    id="your-amount"
+                                                    type="number"
+                                                    step="0.01"
+                                                    placeholder="0.00"
+                                                    value={yourAmount}
+                                                    onChange={(e) => setYourAmount(e.target.value)}
+                                                    className="h-11 font-mono text-sm"
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -683,19 +691,19 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                             </div>
 
                             {/* Footer */}
-                            <div className="border-t border-border px-6 py-5 bg-muted/30 flex gap-3 sticky bottom-0">
-                                {p2pStep > 1 && p2pStep < 3 && (
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => setP2pStep(p2pStep - 1)}
-                                        className="h-11 px-6 gap-2 hover:bg-background"
-                                    >
-                                        <FiArrowLeft className="w-4 h-4" />
-                                        Back
-                                    </Button>
-                                )}
+                            {p2pStep < 3 && (
+                                <div className="border-t border-border px-6 py-5 bg-muted/30 flex gap-3 sticky bottom-0">
+                                    {p2pStep > 1 && (
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setP2pStep(p2pStep - 1)}
+                                            className="h-11 px-6 gap-2 hover:bg-background"
+                                        >
+                                            <FiArrowLeft className="w-4 h-4" />
+                                            Back
+                                        </Button>
+                                    )}
 
-                                {p2pStep < 3 ? (
                                     <Button
                                         onClick={handleNextStep}
                                         disabled={
@@ -707,17 +715,8 @@ export default function UserOrders({ orders, paymentMethods }: Props) {
                                         Next Step
                                         <FiArrowRight className="w-4 h-4" />
                                     </Button>
-                                ) : (
-                                    <Button
-                                        onClick={() => handleMarkAsSent(selectedOrderForP2p.id)}
-                                        className="flex-1 h-11 gap-2 text-base font-medium"
-                                        variant="default"
-                                    >
-                                        <FiCheck className="w-4 h-4" />
-                                        Mark as Sent
-                                    </Button>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

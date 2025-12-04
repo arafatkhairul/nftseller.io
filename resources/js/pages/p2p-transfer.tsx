@@ -8,6 +8,7 @@ import { FiAlertTriangle, FiCheckCircle, FiClock, FiX } from 'react-icons/fi';
 
 interface Transfer {
     id: number;
+    transfer_code: string;
     order_number: string;
     nft_name: string;
     nft_image: string | null;
@@ -50,7 +51,7 @@ export default function P2pTransfer({ transfer: initialTransfer }: Props) {
                 // If released, redirect
                 if (data.status === 'released') {
                     setTimeout(() => {
-                        window.location.href = '/orders';
+                        window.location.href = '/';
                     }, 2000);
                 }
             } catch (error) {
@@ -84,7 +85,7 @@ export default function P2pTransfer({ transfer: initialTransfer }: Props) {
     };
 
     const handlePaymentCompleted = () => {
-        router.post(`/p2p-transfer/${transfer.id}/payment-completed`, {}, {
+        router.post(`/p2p-transfer/${transfer.transfer_code}/payment-completed`, {}, {
             preserveScroll: true,
         });
     };
@@ -315,7 +316,7 @@ export default function P2pTransfer({ transfer: initialTransfer }: Props) {
                                 <div className="text-center">
                                     <FiCheckCircle className="w-12 h-12 text-green-600 mx-auto mb-2" />
                                     <p className="text-sm font-semibold text-green-600">Transfer Released Successfully!</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Redirecting to orders...</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Redirecting to home...</p>
                                 </div>
                             </div>
                         )}
@@ -357,63 +358,74 @@ export default function P2pTransfer({ transfer: initialTransfer }: Props) {
                             </div>
                         )}
                     </div>
+                    {/* Support Notice */}
+                    <div className="mt-6 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 border border-border/50 backdrop-blur-sm">
+                            <FiAlertTriangle className="w-3.5 h-3.5 text-muted-foreground" />
+                            <p className="text-xs text-muted-foreground">
+                                Need assistance? <a href="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">Login</a> or <a href="/register" className="text-primary hover:text-primary/80 font-medium transition-colors">Register</a> to contact support.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Appeal Modal */}
-            {showAppealModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-card border border-border rounded-xl shadow-2xl max-w-md w-full">
-                        <div className="border-b border-border px-6 py-4">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-bold text-foreground">Submit Appeal</h2>
-                                <button
+            {
+                showAppealModal && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="bg-card border border-border rounded-xl shadow-2xl max-w-md w-full">
+                            <div className="border-b border-border px-6 py-4">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-lg font-bold text-foreground">Submit Appeal</h2>
+                                    <button
+                                        onClick={() => setShowAppealModal(false)}
+                                        className="text-muted-foreground hover:text-foreground"
+                                    >
+                                        <FiX className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="px-6 py-6 space-y-4">
+                                <div>
+                                    <Label htmlFor="appeal-reason">Reason for Appeal *</Label>
+                                    <Textarea
+                                        id="appeal-reason"
+                                        placeholder="Explain why you're appealing this transfer..."
+                                        value={appealReason}
+                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAppealReason(e.target.value)}
+                                        className="mt-2 min-h-[120px]"
+                                    />
+                                </div>
+
+                                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+                                    <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                                        <strong>Note:</strong> Once appealed, an admin will review your case. The transfer will be on hold until resolved.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="border-t border-border px-6 py-4 flex gap-3">
+                                <Button
+                                    variant="outline"
                                     onClick={() => setShowAppealModal(false)}
-                                    className="text-muted-foreground hover:text-foreground"
+                                    className="flex-1"
                                 >
-                                    <FiX className="w-5 h-5" />
-                                </button>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleAppeal}
+                                    disabled={!appealReason.trim()}
+                                    className="flex-1"
+                                >
+                                    Submit Appeal
+                                </Button>
                             </div>
-                        </div>
-
-                        <div className="px-6 py-6 space-y-4">
-                            <div>
-                                <Label htmlFor="appeal-reason">Reason for Appeal *</Label>
-                                <Textarea
-                                    id="appeal-reason"
-                                    placeholder="Explain why you're appealing this transfer..."
-                                    value={appealReason}
-                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAppealReason(e.target.value)}
-                                    className="mt-2 min-h-[120px]"
-                                />
-                            </div>
-
-                            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
-                                <p className="text-xs text-yellow-700 dark:text-yellow-400">
-                                    <strong>Note:</strong> Once appealed, an admin will review your case. The transfer will be on hold until resolved.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="border-t border-border px-6 py-4 flex gap-3">
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowAppealModal(false)}
-                                className="flex-1"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleAppeal}
-                                disabled={!appealReason.trim()}
-                                className="flex-1"
-                            >
-                                Submit Appeal
-                            </Button>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </>
     );
 }

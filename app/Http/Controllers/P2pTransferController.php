@@ -21,7 +21,7 @@ class P2pTransferController extends Controller
             'partner_payment_method_id' => 'required|exists:payment_methods,id',
             'amount' => 'required|numeric|min:0.01',
             'sender_address' => 'nullable|string',
-            'network' => 'required|string',
+            'network' => 'required|exists:p2p_networks,name',
         ]);
 
         // Generate unique transfer code
@@ -64,6 +64,7 @@ class P2pTransferController extends Controller
 
         $transferData = [
             'id' => $transfer->id,
+            'transfer_code' => $transfer->transfer_code,
             'order_id' => $transfer->order_id,
             'order_number' => $transfer->order->order_number,
             'nft_name' => $transfer->order->nft->name ?? 'Unknown',
@@ -87,9 +88,9 @@ class P2pTransferController extends Controller
     /**
      * Mark payment as completed
      */
-    public function markPaymentCompleted(Request $request, $id)
+    public function markPaymentCompleted(Request $request, $code)
     {
-        $transfer = P2pTransfer::findOrFail($id);
+        $transfer = P2pTransfer::where('transfer_code', $code)->firstOrFail();
 
         if ($transfer->status !== 'pending') {
             return back()->with('error', 'Transfer is not in pending status');
@@ -124,7 +125,7 @@ class P2pTransferController extends Controller
         // Update order status to sent
         $transfer->order->update(['status' => 'sent']);
 
-        return redirect()->route('orders.index')->with('success', 'Transfer released successfully!');
+        return redirect()->route('home')->with('success', 'Transfer released successfully!');
     }
 
     /**

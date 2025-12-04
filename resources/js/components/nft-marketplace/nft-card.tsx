@@ -11,6 +11,16 @@ export interface NFTCardProps {
         usd: number;
     };
     creator?: string;
+    artist?: {
+        name: string;
+        avatar?: string;
+        is_verified: boolean;
+    };
+    blockchain_data?: {
+        id: number;
+        name: string;
+        logo: string | null;
+    };
     likes?: number;
     views?: number;
     rarity?: string;

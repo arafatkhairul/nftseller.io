@@ -217,6 +217,17 @@ interface DatabaseNFT {
         id: number;
         name: string;
     };
+    artist?: {
+        id: number;
+        name: string;
+        avatar?: string;
+        is_verified: boolean;
+    };
+    blockchain_data?: {
+        id: number;
+        name: string;
+        logo: string | null;
+    };
     category?: string;
     views: number;
     likes: number;
@@ -229,7 +240,15 @@ interface Category {
     slug: string;
 }
 
-export default function NFTMarketplace({ nfts: dbNfts = [], categories = [] }: { nfts?: DatabaseNFT[], categories?: Category[] }) {
+export default function NFTMarketplace({
+    nfts: dbNfts = [],
+    categories = [],
+    heroBanners: dbHeroBanners = []
+}: {
+    nfts?: DatabaseNFT[],
+    categories?: Category[],
+    heroBanners?: any[]
+}) {
     const page = usePage<{ auth?: { user?: any } }>();
     const user = page.props.auth?.user || null;
 
@@ -247,6 +266,12 @@ export default function NFTMarketplace({ nfts: dbNfts = [], categories = [] }: {
             image: nft.image_url,
             price: { eth: parseFloat(String(nft.price)), usd: parseFloat(String(nft.price)) * 2500 },
             creator: nft.creator?.name || 'Unknown Creator',
+            artist: nft.artist ? {
+                name: nft.artist.name,
+                avatar: nft.artist.avatar,
+                is_verified: nft.artist.is_verified
+            } : undefined,
+            blockchain_data: nft.blockchain_data,
             likes: nft.likes,
             views: nft.views,
             rarity: nft.rarity,
@@ -300,7 +325,7 @@ export default function NFTMarketplace({ nfts: dbNfts = [], categories = [] }: {
 
     return (
         <>
-            <Head title="NFT Marketplace - NFTSELLER.IO">
+            <Head title="NFT Marketplace">
                 <meta name="description" content="Discover, collect, and sell extraordinary NFTs on the world's first and largest NFT marketplace." />
             </Head>
 
@@ -319,8 +344,8 @@ export default function NFTMarketplace({ nfts: dbNfts = [], categories = [] }: {
                     {/* Enhanced Collection Banner */}
                     <div className="w-full mb-12">
                         <CollectionBanner
-                            collections={collectionsData}
-                            onCollectionChange={(index) => console.log(`Collection changed to: ${collectionsData[index].title}`)}
+                            collections={dbHeroBanners.length > 0 ? dbHeroBanners : collectionsData}
+                            onCollectionChange={(index) => console.log(`Collection changed to index: ${index}`)}
                         />
                     </div>
 

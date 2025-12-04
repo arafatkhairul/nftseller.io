@@ -7,7 +7,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
-import { FiActivity, FiArrowLeft, FiCheck, FiClock, FiEye, FiHeart, FiShare2 } from 'react-icons/fi';
+import { FiActivity, FiArrowLeft, FiClock, FiEye, FiHeart, FiShare2 } from 'react-icons/fi';
+import { MdVerified } from 'react-icons/md';
 import { SiEthereum } from 'react-icons/si';
 import { type NFTCardProps } from './nft-card';
 
@@ -198,9 +199,20 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
 
                     {/* Floating Actions */}
                     <div className="absolute top-6 left-6 z-20">
-                        <Badge variant="secondary" className="bg-black/40 backdrop-blur-xl border-white/10 text-white px-3 py-1.5 text-sm font-medium hover:bg-black/60 transition-colors">
-                            <SiEthereum className="w-3.5 h-3.5 mr-2 text-blue-400" /> Ethereum Network
-                        </Badge>
+                        {nft.blockchain_data ? (
+                            <Badge variant="secondary" className="bg-black/40 backdrop-blur-xl border-white/10 text-white px-3 py-1.5 text-sm font-medium hover:bg-black/60 transition-colors flex items-center gap-2">
+                                {nft.blockchain_data.logo ? (
+                                    <img src={nft.blockchain_data.logo} alt={nft.blockchain_data.name} className="w-4 h-4 object-contain" />
+                                ) : (
+                                    <SiEthereum className="w-3.5 h-3.5 text-blue-400" />
+                                )}
+                                {nft.blockchain_data.name} Network
+                            </Badge>
+                        ) : (
+                            <Badge variant="secondary" className="bg-black/40 backdrop-blur-xl border-white/10 text-white px-3 py-1.5 text-sm font-medium hover:bg-black/60 transition-colors">
+                                <SiEthereum className="w-3.5 h-3.5 mr-2 text-blue-400" /> Ethereum Network
+                            </Badge>
+                        )}
                     </div>
 
                     <div className="absolute bottom-6 right-6 z-20 flex gap-3">
@@ -251,13 +263,24 @@ export default function NFTDetailsModal({ open, onOpenChange, nft, onPurchase }:
                                         <div className="flex items-center justify-between">
                                             <div className="space-y-2">
                                                 <h2 className="text-4xl font-bold tracking-tight text-foreground">{nft.name}</h2>
-                                                <div className="flex items-center gap-2 text-base">
-                                                    <span className="text-muted-foreground">Owned by</span>
-                                                    <span className="font-medium text-blue-500 hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-1">
-                                                        {nft.creator || 'Unknown'}
-                                                        <FiCheck className="w-3.5 h-3.5" />
-                                                    </span>
-                                                </div>
+                                                {nft.artist && (
+                                                    <div className="flex items-center gap-2 text-base mb-2">
+                                                        <span className="text-muted-foreground">Created by</span>
+                                                        <span className="font-medium text-foreground flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full hover:bg-muted transition-colors cursor-pointer">
+                                                            {nft.artist.avatar ? (
+                                                                <img src={nft.artist.avatar} alt={nft.artist.name} className="w-5 h-5 rounded-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                                                                    {nft.artist.name.charAt(0)}
+                                                                </div>
+                                                            )}
+                                                            {nft.artist.name}
+                                                            {nft.artist.is_verified && (
+                                                                <MdVerified className="w-4 h-4 text-blue-500" />
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

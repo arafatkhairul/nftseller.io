@@ -64,7 +64,7 @@ export default function Header({
                     <img
                         src="/logo.png"
                         alt="NFTSeller Logo"
-                        className="h-10 w-auto object-contain"
+                        className="h-8 w-auto object-contain"
                     />
                 </div>
 
@@ -186,7 +186,7 @@ export default function Header({
                     ) : (
                         <Button
                             onClick={onLoginClick}
-                            className="w-full mt-4 sm:hidden pro-button text-white border-none"
+                            className="w-full mt-4 sm:hidden pro-button !text-black border-none"
                         >
                             Login
                         </Button>

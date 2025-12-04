@@ -24,12 +24,14 @@ interface NFT {
     price: number;
     quantity: number;
     blockchain: string;
+    blockchain_id?: number;
     contract_address: string;
     token_id: string;
     status: string;
     creator: string;
     created_at: string;
     category_id?: number;
+    artist_id?: number;
     rarity?: string;
     views: number;
     likes: number;
@@ -44,7 +46,18 @@ interface Category {
     name: string;
 }
 
-export default function AdminNfts({ nfts, categories }: { nfts: NFT[], categories: Category[] }) {
+interface Artist {
+    id: number;
+    name: string;
+}
+
+interface Blockchain {
+    id: number;
+    name: string;
+    logo: string | null;
+}
+
+export default function AdminNfts({ nfts, categories, artists = [], blockchains = [] }: { nfts: NFT[], categories: Category[], artists: Artist[], blockchains: Blockchain[] }) {
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -61,6 +74,8 @@ export default function AdminNfts({ nfts, categories }: { nfts: NFT[], categorie
         token_id: '',
         status: 'active',
         category_id: '',
+        artist_id: '',
+        blockchain_id: '',
         rarity: '',
         views: '0',
         likes: '0',
@@ -133,6 +148,12 @@ export default function AdminNfts({ nfts, categories }: { nfts: NFT[], categorie
         if (formData.category_id) {
             form.append('category_id', formData.category_id);
         }
+        if (formData.artist_id) {
+            form.append('artist_id', formData.artist_id);
+        }
+        if (formData.blockchain_id) {
+            form.append('blockchain_id', formData.blockchain_id);
+        }
         if (formData.rarity) {
             form.append('rarity', formData.rarity);
         }
@@ -157,6 +178,8 @@ export default function AdminNfts({ nfts, categories }: { nfts: NFT[], categorie
                         token_id: '',
                         status: 'active',
                         category_id: '',
+                        artist_id: '',
+                        blockchain_id: '',
                         rarity: '',
                         views: '0',
                         likes: '0',
@@ -189,6 +212,8 @@ export default function AdminNfts({ nfts, categories }: { nfts: NFT[], categorie
                         token_id: '',
                         status: 'active',
                         category_id: '',
+                        artist_id: '',
+                        blockchain_id: '',
                         rarity: '',
                         views: '0',
                         likes: '0',
@@ -220,6 +245,8 @@ export default function AdminNfts({ nfts, categories }: { nfts: NFT[], categorie
             token_id: '',
             status: 'active',
             category_id: '',
+            artist_id: '',
+            blockchain_id: '',
             rarity: '',
             views: '0',
             likes: '0',
@@ -240,6 +267,8 @@ export default function AdminNfts({ nfts, categories }: { nfts: NFT[], categorie
             token_id: nft.token_id || '',
             status: nft.status,
             category_id: nft.category_id ? nft.category_id.toString() : '',
+            artist_id: nft.artist_id ? nft.artist_id.toString() : '',
+            blockchain_id: nft.blockchain_id ? nft.blockchain_id.toString() : '',
             rarity: nft.rarity || '',
             views: nft.views.toString(),
             likes: nft.likes.toString(),
@@ -491,15 +520,33 @@ export default function AdminNfts({ nfts, categories }: { nfts: NFT[], categorie
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="text-sm font-medium">Blockchain</label>
+                                        <label className="text-sm font-medium">Artist</label>
                                         <select
-                                            value={formData.blockchain}
-                                            onChange={(e) => setFormData({ ...formData, blockchain: e.target.value })}
+                                            value={formData.artist_id}
+                                            onChange={(e) => setFormData({ ...formData, artist_id: e.target.value })}
                                             className="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                                         >
-                                            <option value="Ethereum">Ethereum</option>
-                                            <option value="Polygon">Polygon</option>
-                                            <option value="Solana">Solana</option>
+                                            <option value="">Select Artist</option>
+                                            {artists.map((artist) => (
+                                                <option key={artist.id} value={artist.id}>
+                                                    {artist.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium">Blockchain</label>
+                                        <select
+                                            value={formData.blockchain_id}
+                                            onChange={(e) => setFormData({ ...formData, blockchain_id: e.target.value })}
+                                            className="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                        >
+                                            <option value="">Select Blockchain</option>
+                                            {blockchains.map((blockchain) => (
+                                                <option key={blockchain.id} value={blockchain.id}>
+                                                    {blockchain.name}
+                                                </option>
+                                            ))}
                                         </select>
                                     </div>
                                     <div>
@@ -558,7 +605,7 @@ export default function AdminNfts({ nfts, categories }: { nfts: NFT[], categorie
                                             <th className="pb-3 px-2">Image</th>
                                             <th className="pb-3 px-2">Price</th>
                                             <th className="pb-3 px-2">Qty</th>
-                                            <th className="pb-3 px-2">Creator</th>
+                                            <th className="pb-3 px-2">Artist</th>
                                             <th className="pb-3 px-2">Status</th>
                                             <th className="pb-3 px-2">Rarity</th>
                                             <th className="pb-3 px-2">Date</th>
@@ -578,7 +625,9 @@ export default function AdminNfts({ nfts, categories }: { nfts: NFT[], categorie
                                                 </td>
                                                 <td className="py-4 px-2 font-semibold text-green-500">{nft.price} ETH</td>
                                                 <td className="py-4 px-2">{nft.quantity}</td>
-                                                <td className="py-4 px-2 text-sm text-muted-foreground">{nft.creator}</td>
+                                                <td className="py-4 px-2 text-sm text-muted-foreground">
+                                                    {artists.find(a => a.id === nft.artist_id)?.name || 'Unknown'}
+                                                </td>
                                                 <td className="py-4 px-2">
                                                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(nft.status)}`}>
                                                         {nft.status}

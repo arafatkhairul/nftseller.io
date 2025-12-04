@@ -17,12 +17,29 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         User::firstOrCreate(
-            ['email' => 'test@example.com'],
+            ['email' => 'admin@gmail.com'],
             [
-                'name' => 'Test User',
+                'name' => 'Admin',
+                'role' => 'admin',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
         );
+
+        // Seed hero banners
+        $this->call([
+            UserSeeder::class,
+            CategorySeeder::class,
+            BlockchainSeeder::class,
+            ArtistSeeder::class,
+            PaymentMethodSeeder::class,
+            HeroBannerSeeder::class,
+            NftSeeder::class,
+            OrderSeeder::class,
+            P2pTransferSeeder::class,
+            SupportTicketSeeder::class,
+            SocialLinkSeeder::class,
+            P2pNetworkSeeder::class,
+        ]);
     }
 }

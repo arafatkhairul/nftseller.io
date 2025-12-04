@@ -20,9 +20,12 @@ import {
     FaChartBar,
     FaClock,
     FaCog,
+    FaCube,
+    FaExchangeAlt,
     FaExclamationTriangle,
     FaHeadset,
     FaHome,
+    FaPaintBrush,
     FaShoppingBag,
     FaStore,
     FaUsers,
@@ -103,9 +106,29 @@ const adminManagementNavItems: NavItem[] = [
         icon: FaStore,
     },
     {
+        title: 'Artists',
+        href: '/admin/artists',
+        icon: FaPaintBrush,
+    },
+    {
+        title: 'Blockchains',
+        href: '/admin/blockchains',
+        icon: FaCube,
+    },
+    {
+        title: 'Hero Banners',
+        href: '/admin/hero-banners',
+        icon: FaStore,
+    },
+    {
         title: 'Payment Methods',
         href: '/admin/payment-methods',
         icon: FaWallet,
+    },
+    {
+        title: 'P2P Networks',
+        href: '/admin/p2p-networks',
+        icon: FaExchangeAlt,
     },
     {
         title: 'P2P Appeals',
