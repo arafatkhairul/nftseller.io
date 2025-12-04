@@ -159,6 +159,29 @@ class AdminController extends Controller
      */
     public function settings()
     {
-        return Inertia::render('admin/settings');
+        $settings = \App\Models\Setting::all()->pluck('value', 'key');
+        return Inertia::render('admin/settings', [
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
+     * Update settings
+     */
+    public function updateSettings(\Illuminate\Http\Request $request)
+    {
+        $validated = $request->validate([
+            'p2p_payment_deadline_minutes' => 'required|integer|min:1',
+            'p2p_auto_release_minutes' => 'required|integer|min:1',
+        ]);
+
+        foreach ($validated as $key => $value) {
+            \App\Models\Setting::updateOrCreate(
+                ['key' => $key],
+                ['value' => $value]
+            );
+        }
+
+        return back()->with('success', 'Settings updated successfully.');
     }
 }

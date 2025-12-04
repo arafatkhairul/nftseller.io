@@ -78,6 +78,8 @@ class P2pTransferController extends Controller
             'status' => $transfer->status,
             'remaining_time' => $transfer->getRemainingTime(),
             'created_at' => $transfer->created_at->format('Y-m-d H:i'),
+            'payment_deadline_minutes' => \App\Models\Setting::where('key', 'p2p_payment_deadline_minutes')->value('value') ?? 15,
+            'auto_release_minutes' => \App\Models\Setting::where('key', 'p2p_auto_release_minutes')->value('value') ?? 5,
         ];
 
         return Inertia::render('p2p-transfer', [
@@ -97,7 +99,8 @@ class P2pTransferController extends Controller
         }
 
         $now = now();
-        $autoReleaseAt = $now->copy()->addMinutes(5);
+        $autoReleaseMinutes = \App\Models\Setting::where('key', 'p2p_auto_release_minutes')->value('value') ?? 5;
+        $autoReleaseAt = $now->copy()->addMinutes((int)$autoReleaseMinutes);
 
         $transfer->update([
             'status' => 'payment_completed',
@@ -106,7 +109,7 @@ class P2pTransferController extends Controller
             'auto_release_at' => $autoReleaseAt,
         ]);
 
-        return back()->with('success', 'Payment marked as completed. 5-minute release timer started.');
+        return back()->with('success', "Payment marked as completed. {$autoReleaseMinutes}-minute release timer started.");
     }
 
     /**

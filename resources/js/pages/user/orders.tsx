@@ -23,6 +23,16 @@ interface Order {
     status: string;
     created_at: string;
     created_at_diff: string;
+    active_p2p_transfer: {
+        id: number;
+        transfer_code: string;
+        partner_address: string;
+        partner_payment_method_id: number;
+        amount: string;
+        network: string;
+        status: string;
+        link: string;
+    } | null;
 }
 
 interface PaymentMethod {
@@ -120,19 +130,36 @@ export default function UserOrders({ orders, paymentMethods, networks }: Props) 
     const openP2pModal = (order: Order) => {
         setSelectedOrderForP2p(order);
         setP2pModalOpen(true);
-        setP2pStep(1);
-        // Reset form
-        setPartnerAddress('');
-        setPartnerPaymentMethod('');
-        setYourAmount(order.total_price);
-        setYourAddress('');
-        setYourNetwork('');
-        setGeneratedLink('');
-        setLinkCopied(false);
-        setTransferId(null);
-        setTransferStatus('pending');
-        setShowAppealInput(false);
-        setAppealReason('');
+
+        if (order.active_p2p_transfer) {
+            // Resume active transfer
+            const transfer = order.active_p2p_transfer;
+            setP2pStep(3);
+            setPartnerAddress(transfer.partner_address);
+            setPartnerPaymentMethod(transfer.partner_payment_method_id.toString());
+            setYourAmount(transfer.amount);
+            setYourNetwork(transfer.network);
+            setGeneratedLink(transfer.link);
+            setTransferId(transfer.id);
+            setTransferStatus(transfer.status);
+            setLinkCopied(false);
+            setShowAppealInput(false);
+            setAppealReason('');
+        } else {
+            // Start new
+            setP2pStep(1);
+            setPartnerAddress('');
+            setPartnerPaymentMethod('');
+            setYourAmount(order.total_price);
+            setYourAddress('');
+            setYourNetwork('');
+            setGeneratedLink('');
+            setLinkCopied(false);
+            setTransferId(null);
+            setTransferStatus('pending');
+            setShowAppealInput(false);
+            setAppealReason('');
+        }
     };
 
     const closeP2pModal = () => {

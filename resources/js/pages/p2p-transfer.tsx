@@ -21,6 +21,8 @@ interface Transfer {
     status: string;
     remaining_time: number | null;
     created_at: string;
+    payment_deadline_minutes: number;
+    auto_release_minutes: number;
 }
 
 interface Props {
@@ -201,8 +203,8 @@ export default function P2pTransfer({ transfer: initialTransfer }: Props) {
                                             </p>
                                             <p className="text-xs text-muted-foreground">
                                                 {transfer.status === 'pending'
-                                                    ? 'Complete payment within 15 minutes'
-                                                    : 'Will auto-release in 5 minutes if no action taken'}
+                                                    ? `Complete payment within ${transfer.payment_deadline_minutes} minutes`
+                                                    : `Will auto-release in ${transfer.auto_release_minutes} minutes if no action taken`}
                                             </p>
                                         </div>
                                     </div>

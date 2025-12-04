@@ -15,10 +15,26 @@ class OrderController extends Controller
     public function userOrders()
     {
         $orders = auth()->user()->orders()
-            ->with('nft')
+            ->with(['nft', 'activeP2pTransfer'])
             ->latest()
             ->get()
             ->map(function ($order) {
+                $activeTransfer = $order->activeP2pTransfer;
+                $p2pData = null;
+
+                if ($activeTransfer && !in_array($activeTransfer->status, ['cancelled', 'appeal_rejected'])) {
+                    $p2pData = [
+                        'id' => $activeTransfer->id,
+                        'transfer_code' => $activeTransfer->transfer_code,
+                        'partner_address' => $activeTransfer->partner_address,
+                        'partner_payment_method_id' => $activeTransfer->partner_payment_method_id,
+                        'amount' => $activeTransfer->amount,
+                        'network' => $activeTransfer->network,
+                        'status' => $activeTransfer->status,
+                        'link' => route('p2p-transfer.show', ['code' => $activeTransfer->transfer_code]),
+                    ];
+                }
+
                 return [
                     'id' => $order->id,
                     'order_number' => $order->order_number,
@@ -32,6 +48,7 @@ class OrderController extends Controller
                     'status' => $order->status,
                     'created_at' => $order->created_at->format('Y-m-d H:i'),
                     'created_at_diff' => $order->created_at->diffForHumans(),
+                    'active_p2p_transfer' => $p2pData,
                 ];
             });
 

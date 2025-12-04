@@ -50,7 +50,8 @@ class P2pTransfer extends Model
     public function getRemainingTime(): ?int
     {
         if ($this->status === 'pending' && $this->created_at) {
-            $endTime = $this->created_at->addMinutes(15);
+            $deadlineMinutes = \App\Models\Setting::where('key', 'p2p_payment_deadline_minutes')->value('value') ?? 15;
+            $endTime = $this->created_at->addMinutes((int)$deadlineMinutes);
             return max(0, now()->diffInSeconds($endTime, false));
         }
 

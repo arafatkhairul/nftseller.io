@@ -38,8 +38,27 @@ class Order extends Model
     /**
      * Get the NFT associated with the order
      */
+    /**
+     * Get the NFT associated with the order
+     */
     public function nft(): BelongsTo
     {
         return $this->belongsTo(Nft::class);
+    }
+
+    /**
+     * Get the P2P transfers for the order
+     */
+    public function p2pTransfers()
+    {
+        return $this->hasMany(P2pTransfer::class);
+    }
+
+    /**
+     * Get the active/latest P2P transfer
+     */
+    public function activeP2pTransfer()
+    {
+        return $this->hasOne(P2pTransfer::class)->latestOfMany();
     }
 }

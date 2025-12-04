@@ -1,8 +1,11 @@
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { FaBell, FaCog, FaGlobe, FaLock } from 'react-icons/fa';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { FaBell, FaClock, FaCog, FaGlobe, FaLock } from 'react-icons/fa';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -15,7 +18,19 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function AdminSettings() {
+export default function AdminSettings({ settings }: { settings: Record<string, string> }) {
+    const { data, setData, post, processing, recentlySuccessful } = useForm({
+        p2p_payment_deadline_minutes: settings?.p2p_payment_deadline_minutes || '15',
+        p2p_auto_release_minutes: settings?.p2p_auto_release_minutes || '5',
+    });
+
+    const submitP2pSettings = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(route('settings.update'), {
+            preserveScroll: true,
+        });
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Admin Settings" />
@@ -28,6 +43,52 @@ export default function AdminSettings() {
                 </div>
 
                 <div className="grid gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <FaClock className="w-5 h-5" />
+                                P2P Transfer Settings
+                            </CardTitle>
+                            <CardDescription>Configure timers for P2P transfers</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={submitP2pSettings} className="space-y-4">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="payment_deadline">Payment Deadline (Minutes)</Label>
+                                        <Input
+                                            id="payment_deadline"
+                                            type="number"
+                                            value={data.p2p_payment_deadline_minutes}
+                                            onChange={e => setData('p2p_payment_deadline_minutes', e.target.value)}
+                                            min="1"
+                                        />
+                                        <p className="text-xs text-muted-foreground">Time allowed for buyer to complete payment.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="auto_release">Auto-Release Timer (Minutes)</Label>
+                                        <Input
+                                            id="auto_release"
+                                            type="number"
+                                            value={data.p2p_auto_release_minutes}
+                                            onChange={e => setData('p2p_auto_release_minutes', e.target.value)}
+                                            min="1"
+                                        />
+                                        <p className="text-xs text-muted-foreground">Time before asset is auto-released after payment confirmation.</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <Button type="submit" disabled={processing}>
+                                        {processing ? 'Saving...' : 'Save Changes'}
+                                    </Button>
+                                    {recentlySuccessful && (
+                                        <p className="text-sm text-green-600 animate-fade-in">Saved successfully!</p>
+                                    )}
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
+
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">

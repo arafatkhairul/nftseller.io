@@ -91,6 +91,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('orders/{id}/reject-sent', [\App\Http\Controllers\OrderController::class, 'rejectSentRequest'])->name('orders.reject-sent');
     Route::patch('orders/{order}/status', [\App\Http\Controllers\OrderController::class, 'updateStatus'])->name('orders.updateStatus');
     Route::get('settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
+    Route::post('settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
 
     // NFT Management Routes
     Route::get('nfts', [\App\Http\Controllers\NftController::class, 'manage'])->name('nfts.manage');
