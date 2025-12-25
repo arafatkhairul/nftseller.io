@@ -5,6 +5,7 @@ import { type NFTCardProps } from '@/components/nft-marketplace/nft-card';
 import NFTDetailsModal from '@/components/nft-marketplace/nft-details-modal';
 import NFTGrid from '@/components/nft-marketplace/nft-grid';
 import { Head, router, usePage } from '@inertiajs/react';
+import axios from 'axios';
 import { useEffect, useState } from 'react';
 
 // Sample NFT data using real OpenSea image
@@ -211,6 +212,7 @@ const sampleNFTs: Omit<NFTCardProps, 'onLike' | 'onView' | 'onPurchase'>[] = [
 interface DatabaseNFT {
     id: number;
     name: string;
+    description?: string;
     image_url: string;
     price: string;
     creator?: {
@@ -227,11 +229,15 @@ interface DatabaseNFT {
         id: number;
         name: string;
         logo: string | null;
+        exchange_rate?: number;
     };
     category?: string;
     views: number;
     likes: number;
     rarity?: string;
+    quantity: number;
+    is_liked: boolean;
+    properties?: { trait_type: string; value: string }[];
 }
 
 interface Category {
@@ -260,24 +266,32 @@ export default function NFTMarketplace({
 
     // Convert database NFTs to component format
     const convertedNFTs = dbNfts.length > 0
-        ? dbNfts.map((nft) => ({
-            id: String(nft.id),
-            name: nft.name,
-            image: nft.image_url,
-            price: { eth: parseFloat(String(nft.price)), usd: parseFloat(String(nft.price)) * 2500 },
-            creator: nft.creator?.name || 'Unknown Creator',
-            artist: nft.artist ? {
-                name: nft.artist.name,
-                avatar: nft.artist.avatar,
-                is_verified: nft.artist.is_verified
-            } : undefined,
-            blockchain_data: nft.blockchain_data,
-            likes: nft.likes,
-            views: nft.views,
-            rarity: nft.rarity,
-            category: nft.category,
-            isLiked: false
-        }))
+        ? dbNfts.map((nft) => {
+            const rate = parseFloat(String(nft.blockchain_data?.exchange_rate || '0'));
+            const exchangeRate = rate > 0 ? rate : 2000;
+
+            return {
+                id: String(nft.id),
+                name: nft.name,
+                description: nft.description,
+                image: nft.image_url,
+                price: { eth: parseFloat(String(nft.price)), usd: parseFloat(String(nft.price)) * exchangeRate },
+                creator: nft.creator?.name || 'Unknown Creator',
+                artist: nft.artist ? {
+                    name: nft.artist.name,
+                    avatar: nft.artist.avatar,
+                    is_verified: nft.artist.is_verified
+                } : undefined,
+                blockchain_data: nft.blockchain_data,
+                likes: nft.likes,
+                views: nft.views,
+                rarity: nft.rarity,
+                category: nft.category,
+                quantity: nft.quantity,
+                isLiked: nft.is_liked,
+                properties: nft.properties
+            }
+        })
         : sampleNFTs;
 
     // Filter NFTs based on active category
@@ -308,8 +322,29 @@ export default function NFTMarketplace({
         console.log('See all NFTs clicked');
     };
 
-    const handleNFTLike = (id: string) => {
-        console.log(`NFT ${id} liked`);
+    const handleNFTLike = async (id: string) => {
+        if (!user) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            const response = await axios.post(`/nfts/${id}/like`);
+            if (response.data.success) {
+                router.reload({ only: ['nfts'] });
+
+                // Also update selectedNFT if it's open
+                if (selectedNFT && selectedNFT.id === id) {
+                    setSelectedNFT((prev: any) => ({
+                        ...prev,
+                        isLiked: response.data.liked,
+                        likes: response.data.likes_count
+                    }));
+                }
+            }
+        } catch (error) {
+            console.error('Error liking NFT:', error);
+        }
     };
 
     const handleNFTView = (id: string) => {
@@ -374,6 +409,7 @@ export default function NFTMarketplace({
                 onOpenChange={setDetailsOpen}
                 nft={selectedNFT}
                 onPurchase={handleNFTPurchase}
+                onLike={handleNFTLike}
             />
             <Footer />
         </>

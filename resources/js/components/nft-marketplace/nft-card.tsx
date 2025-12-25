@@ -5,6 +5,7 @@ import { SiEthereum } from 'react-icons/si';
 export interface NFTCardProps {
     id: string;
     name: string;
+    description?: string;
     image: string;
     price: {
         eth: number;
@@ -25,6 +26,8 @@ export interface NFTCardProps {
     views?: number;
     rarity?: string;
     category?: string;
+    quantity?: number;
+    properties?: { trait_type: string; value: string }[];
     isLiked?: boolean;
     onView?: (id: string) => void;
     onPurchase?: (id: string) => void;
@@ -37,10 +40,20 @@ export default function NFTCard({
     image,
     price,
     creator,
+    blockchain_data,
     onView,
     onPurchase,
     className = ""
 }: NFTCardProps) {
+    const getCurrencySymbol = (name?: string) => {
+        if (!name) return 'ETH';
+        if (name.toLowerCase().includes('polygon')) return 'MATIC';
+        if (name.toLowerCase().includes('binance')) return 'BNB';
+        if (name.toLowerCase().includes('solana')) return 'SOL';
+        return 'ETH';
+    };
+
+    const symbol = getCurrencySymbol(blockchain_data?.name);
     const handleView = () => {
         onView?.(id);
     };
@@ -103,11 +116,15 @@ export default function NFTCard({
                 <div className="space-y-2">
                     <div className="flex items-baseline justify-between">
                         <div className="flex items-center gap-1.5">
-                            <SiEthereum className="w-4 h-4 text-foreground" />
+                            {blockchain_data?.logo ? (
+                                <img src={blockchain_data.logo} alt={blockchain_data.name} className="w-4 h-4 object-contain" />
+                            ) : (
+                                <SiEthereum className="w-4 h-4 text-foreground" />
+                            )}
                             <span className="text-lg font-bold">
                                 {price.eth}
                             </span>
-                            <span className="text-xs text-muted-foreground">ETH</span>
+                            <span className="text-xs text-muted-foreground">{symbol}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                             ${price.usd.toLocaleString()}

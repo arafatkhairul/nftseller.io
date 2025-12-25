@@ -59,21 +59,21 @@ export default function SupportShow({ ticket, messages }: Props) {
             { title: ticket.ticket_unique_id, href: `/support-tickets/${ticket.id}` }
         ]}>
             <Head title={`Ticket ${ticket.ticket_unique_id}`} />
-            <div className="p-6 h-[calc(100vh-4rem)] flex flex-col gap-6">
+            <div className="p-4 md:p-6 h-[calc(100vh-4rem)] flex flex-col gap-4 md:gap-6">
                 {/* Ticket Header */}
                 <Card className="flex-shrink-0">
                     <CardHeader className="py-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
                                 <div className="flex items-center gap-3">
-                                    <h1 className="text-xl font-bold">{ticket.subject}</h1>
-                                    <Badge variant="outline">{ticket.ticket_unique_id}</Badge>
+                                    <h1 className="text-lg md:text-xl font-bold">{ticket.subject}</h1>
+                                    <Badge variant="outline" className="text-xs">{ticket.ticket_unique_id}</Badge>
                                 </div>
-                                <p className="text-sm text-muted-foreground mt-1">
+                                <p className="text-xs md:text-sm text-muted-foreground mt-1">
                                     Created on {ticket.created_at}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 self-start md:self-auto">
                                 <Badge variant={ticket.priority === 'high' ? 'destructive' : 'secondary'}>
                                     {ticket.priority}
                                 </Badge>
@@ -105,7 +105,7 @@ export default function SupportShow({ ticket, messages }: Props) {
                                         msg.is_admin ? <FaUserShield /> : <FaUser />
                                     )}
                                 </div>
-                                <div className={`flex flex-col max-w-[80%] ${msg.is_me ? 'items-end' : 'items-start'}`}>
+                                <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${msg.is_me ? 'items-end' : 'items-start'}`}>
                                     <div className="flex items-center gap-2 mb-1">
                                         <span className="text-xs font-semibold">{msg.user_name}</span>
                                         <span className="text-[10px] text-muted-foreground">{msg.created_at}</span>
@@ -124,23 +124,32 @@ export default function SupportShow({ ticket, messages }: Props) {
 
                     {/* Reply Area */}
                     <div className="p-4 border-t bg-background">
-                        <form onSubmit={submit} className="flex gap-4">
-                            <Textarea
-                                value={data.message}
-                                onChange={(e) => setData('message', e.target.value)}
-                                placeholder="Type your reply..."
-                                className="min-h-[60px] resize-none"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        submit(e as any);
-                                    }
-                                }}
-                            />
-                            <Button type="submit" size="icon" className="h-[60px] w-[60px]" disabled={processing || !data.message.trim()}>
-                                <FaPaperPlane className="w-5 h-5" />
-                            </Button>
-                        </form>
+                        {ticket.status === 'closed' ? (
+                            <div className="flex items-center justify-center p-4 bg-muted/50 rounded-lg border border-dashed">
+                                <div className="text-center">
+                                    <FaUserShield className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
+                                    <p className="text-sm font-medium text-muted-foreground">This ticket is closed. You cannot reply.</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <form onSubmit={submit} className="flex gap-3 md:gap-4">
+                                <Textarea
+                                    value={data.message}
+                                    onChange={(e) => setData('message', e.target.value)}
+                                    placeholder="Type your reply..."
+                                    className="min-h-[50px] md:min-h-[60px] resize-none"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            submit(e as any);
+                                        }
+                                    }}
+                                />
+                                <Button type="submit" size="icon" className="h-[50px] w-[50px] md:h-[60px] md:w-[60px] flex-shrink-0" disabled={processing || !data.message.trim()}>
+                                    <FaPaperPlane className="w-4 h-4 md:w-5 md:h-5" />
+                                </Button>
+                            </form>
+                        )}
                     </div>
                 </Card>
             </div>

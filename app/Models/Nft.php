@@ -24,6 +24,7 @@ class Nft extends Model
         'category_id',
         'artist_id',
         'rarity',
+        'properties',
     ];
 
     protected $casts = [
@@ -31,6 +32,8 @@ class Nft extends Model
         'quantity' => 'integer',
         'views' => 'integer',
         'likes' => 'integer',
+        'is_verified' => 'boolean',
+        'properties' => 'array',
     ];
 
     /**
@@ -54,5 +57,10 @@ class Nft extends Model
     public function blockchainRelation(): BelongsTo
     {
         return $this->belongsTo(Blockchain::class, 'blockchain_id');
+    }
+
+    public function likedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'nft_user_likes');
     }
 }

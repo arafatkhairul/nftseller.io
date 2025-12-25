@@ -16,22 +16,27 @@ class NftController extends Controller
      */
     public function index()
     {
+        $userId = auth()->id();
+
         $nfts = Nft::with(['creator', 'category', 'artist', 'blockchainRelation'])
+            ->withCount('likedByUsers as user_likes_count')
             ->where('status', 'active')
             ->latest()
             ->get()
-            ->map(function ($nft) {
+            ->map(function ($nft) use ($userId) {
                 return [
                     'id' => $nft->id,
                     'name' => $nft->name,
                     'description' => $nft->description,
                     'image_url' => $nft->image_path ? asset('storage/' . $nft->image_path) : null,
                     'price' => $nft->price,
+                    'quantity' => $nft->quantity,
                     'blockchain' => $nft->blockchain,
                     'blockchain_data' => $nft->relationLoaded('blockchainRelation') && $nft->blockchainRelation ? [
                         'id' => $nft->blockchainRelation->id,
                         'name' => $nft->blockchainRelation->name,
                         'logo' => $nft->blockchainRelation->logo ? asset('storage/' . $nft->blockchainRelation->logo) : null,
+                        'exchange_rate' => $nft->blockchainRelation->exchange_rate,
                     ] : null,
                     'status' => $nft->status,
                     'creator' => $nft->creator ? [
@@ -46,8 +51,10 @@ class NftController extends Controller
                     ] : null,
                     'category' => $nft->category ? $nft->category->name : null,
                     'views' => $nft->views,
-                    'likes' => $nft->likes,
+                    'likes' => $nft->likes + $nft->user_likes_count,
+                    'is_liked' => $userId ? $nft->likedByUsers()->where('user_id', $userId)->exists() : false,
                     'rarity' => $nft->rarity,
+                    'properties' => $nft->properties,
                 ];
             });
 
@@ -121,6 +128,7 @@ class NftController extends Controller
                     'rarity' => $nft->rarity,
                     'views' => $nft->views,
                     'likes' => $nft->likes,
+                    'properties' => $nft->properties,
                     'category_id' => $nft->category_id,
                     'artist_id' => $nft->artist_id,
                     'creator' => $nft->creator ? $nft->creator->name : 'Unknown',
@@ -161,12 +169,17 @@ class NftController extends Controller
             'rarity' => 'nullable|string',
             'views' => 'nullable|integer|min:0',
             'likes' => 'nullable|integer|min:0',
+            'properties' => 'nullable|json',
         ]);
 
         // Handle file upload
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('nfts', 'public');
             $validated['image_path'] = $path;
+        }
+
+        if (isset($validated['properties'])) {
+            $validated['properties'] = json_decode($validated['properties'], true);
         }
 
         $validated['creator_id'] = auth()->id();
@@ -198,6 +211,7 @@ class NftController extends Controller
             'rarity' => 'nullable|string',
             'views' => 'nullable|integer|min:0',
             'likes' => 'nullable|integer|min:0',
+            'properties' => 'nullable|json',
         ]);
 
         // Handle file upload if new image provided
@@ -209,6 +223,10 @@ class NftController extends Controller
 
             $path = $request->file('image')->store('nfts', 'public');
             $validated['image_path'] = $path;
+        }
+
+        if (isset($validated['properties'])) {
+            $validated['properties'] = json_decode($validated['properties'], true);
         }
 
         $nft->update($validated);
@@ -231,5 +249,32 @@ class NftController extends Controller
 
         return redirect()->route('admin.nfts.manage')
             ->with('success', 'NFT deleted successfully!');
+    }
+
+    /**
+     * Toggle like status for an NFT
+     */
+    public function toggleLike(Nft $nft)
+    {
+        if (!auth()->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = auth()->user();
+        $isLiked = $nft->likedByUsers()->where('user_id', $user->id)->exists();
+
+        if ($isLiked) {
+            $nft->likedByUsers()->detach($user->id);
+            $liked = false;
+        } else {
+            $nft->likedByUsers()->attach($user->id);
+            $liked = true;
+        }
+
+        return response()->json([
+            'success' => true,
+            'liked' => $liked,
+            'likes_count' => $nft->likes + $nft->likedByUsers()->count(),
+        ]);
     }
 }

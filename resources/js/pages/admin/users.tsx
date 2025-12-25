@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Pagination from '@/components/ui/pagination';
 import {
     Select,
     SelectContent,
@@ -21,7 +22,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { FaEdit, FaLock, FaTrash, FaUser } from 'react-icons/fa';
+import { FaEdit, FaLock, FaSearch, FaTrash, FaUser } from 'react-icons/fa';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -42,7 +43,13 @@ interface User {
     joinedAt: string;
 }
 
-export default function AdminUsers({ users }: { users: User[] }) {
+interface PaginatedUsers {
+    data: User[];
+    links: any[];
+}
+
+export default function AdminUsers({ users, filters }: { users: PaginatedUsers, filters?: { search?: string } }) {
+    const [search, setSearch] = useState(filters?.search || '');
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [deletingUser, setDeletingUser] = useState<User | null>(null);
@@ -52,6 +59,11 @@ export default function AdminUsers({ users }: { users: User[] }) {
         email: '',
         role: 'user',
     });
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.get('/admin/users', { search }, { preserveState: true });
+    };
 
     const handleEdit = (user: User) => {
         setEditingUser(user);
@@ -102,10 +114,26 @@ export default function AdminUsers({ users }: { users: User[] }) {
                     </p>
                 </div>
 
+                <div className="flex justify-end mb-4">
+                    <form onSubmit={handleSearch} className="flex gap-2">
+                        <div className="relative">
+                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                            <input
+                                type="text"
+                                placeholder="Search by name or email..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="pl-9 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary w-64 bg-background"
+                            />
+                        </div>
+                        <Button type="submit">Search</Button>
+                    </form>
+                </div>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>All Users</CardTitle>
-                        <CardDescription>Total of {users.length} users in the system</CardDescription>
+                        <CardDescription>Total of {users.data.length} users in this page</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="overflow-x-auto">
@@ -120,14 +148,16 @@ export default function AdminUsers({ users }: { users: User[] }) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {users.map((user) => (
+                                    {users.data.map((user) => (
                                         <tr key={user.id} className="border-b hover:bg-muted/50 transition-colors">
                                             <td className="py-4 px-2">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                                                         <FaUser className="w-4 h-4 text-primary" />
                                                     </div>
-                                                    <span className="font-medium">{user.name}</span>
+                                                    <a href={`/admin/users/${user.id}`} className="font-medium hover:underline hover:text-primary transition-colors">
+                                                        {user.name}
+                                                    </a>
                                                 </div>
                                             </td>
                                             <td className="py-4 px-2 text-sm text-muted-foreground">{user.email}</td>
@@ -168,6 +198,8 @@ export default function AdminUsers({ users }: { users: User[] }) {
                         </div>
                     </CardContent>
                 </Card>
+
+                <Pagination links={users.links} />
             </div>
 
             {/* Edit User Dialog */}

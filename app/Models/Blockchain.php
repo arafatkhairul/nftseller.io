@@ -9,6 +9,7 @@ class Blockchain extends Model
     protected $fillable = [
         'name',
         'logo',
+        'exchange_rate',
     ];
 
     public function nfts()

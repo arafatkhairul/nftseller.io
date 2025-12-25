@@ -1,5 +1,5 @@
 import { SharedData } from '@/types';
-import { usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     FaDiscord,
     FaFacebook,
@@ -57,58 +57,25 @@ export function Footer() {
                             })}
                         </div>
                     </div>
-                    <div className="mt-16 grid grid-cols-2 gap-8 xl:col-span-2 xl:mt-0">
-                        <div className="md:grid md:grid-cols-2 md:gap-8">
-                            <div>
-                                <h3 className="text-sm font-semibold leading-6 text-foreground">Marketplace</h3>
-                                <ul role="list" className="mt-6 space-y-4">
-                                    {['All NFTs', 'Art', 'Gaming', 'Memberships', 'PFPs'].map((item) => (
+                    <div className="mt-16 xl:mt-0 xl:col-span-2 flex justify-end">
+                        <div>
+                            <h3 className="text-sm font-semibold leading-6 text-foreground">Company</h3>
+                            <ul role="list" className="mt-6 space-y-4">
+                                {['About', 'Terms & Conditions', 'Privacy Policy'].map((item) => {
+                                    let href = '#';
+                                    if (item === 'About') href = '/about';
+                                    if (item === 'Terms & Conditions') href = '/terms';
+                                    if (item === 'Privacy Policy') href = '/privacy';
+
+                                    return (
                                         <li key={item}>
-                                            <a href="#" className="text-sm leading-6 text-muted-foreground hover:text-foreground transition-colors">
+                                            <Link href={href} className="text-sm leading-6 text-muted-foreground hover:text-foreground transition-colors">
                                                 {item}
-                                            </a>
+                                            </Link>
                                         </li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div className="mt-10 md:mt-0">
-                                <h3 className="text-sm font-semibold leading-6 text-foreground">My Account</h3>
-                                <ul role="list" className="mt-6 space-y-4">
-                                    {['Profile', 'Favorites', 'Watchlist', 'My Collections', 'Settings'].map((item) => (
-                                        <li key={item}>
-                                            <a href="#" className="text-sm leading-6 text-muted-foreground hover:text-foreground transition-colors">
-                                                {item}
-                                            </a>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                        <div className="md:grid md:grid-cols-2 md:gap-8">
-                            <div>
-                                <h3 className="text-sm font-semibold leading-6 text-foreground">Resources</h3>
-                                <ul role="list" className="mt-6 space-y-4">
-                                    {['Help Center', 'Partners', 'Blog', 'Newsletter', 'Taxes'].map((item) => (
-                                        <li key={item}>
-                                            <a href="#" className="text-sm leading-6 text-muted-foreground hover:text-foreground transition-colors">
-                                                {item}
-                                            </a>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div className="mt-10 md:mt-0">
-                                <h3 className="text-sm font-semibold leading-6 text-foreground">Company</h3>
-                                <ul role="list" className="mt-6 space-y-4">
-                                    {['About', 'Careers', 'Ventures', 'Grants'].map((item) => (
-                                        <li key={item}>
-                                            <a href="#" className="text-sm leading-6 text-muted-foreground hover:text-foreground transition-colors">
-                                                {item}
-                                            </a>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                                    );
+                                })}
+                            </ul>
                         </div>
                     </div>
                 </div>

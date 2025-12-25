@@ -24,6 +24,7 @@ interface Blockchain {
     id: number;
     name: string;
     logo: string | null;
+    exchange_rate: number;
     nfts_count: number;
 }
 
@@ -40,6 +41,7 @@ export default function AdminBlockchains({ blockchains }: { blockchains: Blockch
     const [formData, setFormData] = useState({
         name: '',
         logo: null as File | null,
+        exchange_rate: '0',
     });
 
     const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,12 +63,12 @@ export default function AdminBlockchains({ blockchains }: { blockchains: Blockch
 
         const form = new FormData();
         form.append('name', formData.name);
+        form.append('exchange_rate', formData.exchange_rate);
         if (formData.logo) {
             form.append('logo', formData.logo);
         }
 
         if (editingId) {
-            form.append('_method', 'PUT');
             router.post(`/admin/blockchains/${editingId}`, form, {
                 onSuccess: () => {
                     setShowDialog(false);
@@ -96,7 +98,7 @@ export default function AdminBlockchains({ blockchains }: { blockchains: Blockch
     };
 
     const resetForm = () => {
-        setFormData({ name: '', logo: null });
+        setFormData({ name: '', logo: null, exchange_rate: '0' });
         setLogoPreview(null);
         setEditingId(null);
         setErrors({});
@@ -106,6 +108,7 @@ export default function AdminBlockchains({ blockchains }: { blockchains: Blockch
         setFormData({
             name: blockchain.name,
             logo: null,
+            exchange_rate: String(blockchain.exchange_rate),
         });
         setLogoPreview(blockchain.logo);
         setEditingId(blockchain.id);
@@ -158,6 +161,7 @@ export default function AdminBlockchains({ blockchains }: { blockchains: Blockch
                                         <tr className="text-left text-sm font-medium text-muted-foreground">
                                             <th className="pb-3 px-2">Logo</th>
                                             <th className="pb-3 px-2">Name</th>
+                                            <th className="pb-3 px-2">Exchange Rate (USD)</th>
                                             <th className="pb-3 px-2">NFTs Count</th>
                                             <th className="pb-3 px-2">Actions</th>
                                         </tr>
@@ -179,6 +183,7 @@ export default function AdminBlockchains({ blockchains }: { blockchains: Blockch
                                                     )}
                                                 </td>
                                                 <td className="py-4 px-2 font-medium">{blockchain.name}</td>
+                                                <td className="py-4 px-2">${Number(blockchain.exchange_rate).toLocaleString()}</td>
                                                 <td className="py-4 px-2 text-muted-foreground">{blockchain.nfts_count}</td>
                                                 <td className="py-4 px-2">
                                                     <div className="flex gap-2">
@@ -228,6 +233,25 @@ export default function AdminBlockchains({ blockchains }: { blockchains: Blockch
                             {errors.name && (
                                 <p className="text-red-500 text-sm mt-1">
                                     {Array.isArray(errors.name) ? errors.name[0] : errors.name}
+                                </p>
+                            )}
+                        </div>
+
+                        <div>
+                            <Label htmlFor="exchange_rate">Exchange Rate (1 Unit to USD)</Label>
+                            <Input
+                                id="exchange_rate"
+                                type="number"
+                                step="0.01"
+                                value={formData.exchange_rate}
+                                onChange={(e) => setFormData({ ...formData, exchange_rate: e.target.value })}
+                                placeholder="e.g., 2000.00"
+                                className="mt-1"
+                                required
+                            />
+                            {errors.exchange_rate && (
+                                <p className="text-red-500 text-sm mt-1">
+                                    {Array.isArray(errors.exchange_rate) ? errors.exchange_rate[0] : errors.exchange_rate}
                                 </p>
                             )}
                         </div>

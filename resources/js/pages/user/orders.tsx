@@ -214,7 +214,7 @@ export default function UserOrders({ orders, paymentMethods, networks }: Props) 
                     partner_address: partnerAddress,
                     partner_payment_method_id: partnerPaymentMethod,
                     amount: yourAmount,
-                    sender_address: '', // Removed from UI
+                    sender_address: yourAddress,
                     network: yourNetwork,
                 });
 
@@ -223,6 +223,9 @@ export default function UserOrders({ orders, paymentMethods, networks }: Props) 
                     setTransferId(response.data.transfer_id);
                     setTransferStatus('pending');
                     setP2pStep(3);
+
+                    // Refresh router data to get updated orders, but keep modal open
+                    router.reload({ only: ['orders'], preserveState: true, preserveScroll: true });
                 }
             } catch (error) {
                 console.error('Error creating P2P transfer:', error);
@@ -540,6 +543,19 @@ export default function UserOrders({ orders, paymentMethods, networks }: Props) 
                                                     className="h-11 font-mono text-sm"
                                                 />
                                             </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="your-address" className="text-sm font-medium">
+                                                    Your Wallet Address (To Receive Payment) <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    id="your-address"
+                                                    placeholder="Enter your wallet address"
+                                                    value={yourAddress}
+                                                    onChange={(e) => setYourAddress(e.target.value)}
+                                                    className="h-11 font-mono text-sm"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -735,7 +751,7 @@ export default function UserOrders({ orders, paymentMethods, networks }: Props) 
                                         onClick={handleNextStep}
                                         disabled={
                                             (p2pStep === 1 && (!partnerAddress || !partnerPaymentMethod)) ||
-                                            (p2pStep === 2 && (!yourAmount || !yourNetwork))
+                                            (p2pStep === 2 && (!yourAmount || !yourNetwork || !yourAddress))
                                         }
                                         className="flex-1 h-11 gap-2 text-base font-medium shadow-lg shadow-primary/20"
                                     >

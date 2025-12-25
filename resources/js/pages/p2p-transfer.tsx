@@ -253,7 +253,7 @@ export default function P2pTransfer({ transfer: initialTransfer }: Props) {
                                             <p className="text-sm font-medium text-foreground">{transfer.payment_method}</p>
                                         </div>
                                         <div>
-                                            <Label className="text-xs text-muted-foreground">Partner Address</Label>
+                                            <Label className="text-xs text-muted-foreground">Sending NFT to this address</Label>
                                             <p className="text-xs font-mono text-foreground break-all">{transfer.partner_address}</p>
                                         </div>
                                     </div>

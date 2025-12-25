@@ -35,6 +35,12 @@ interface NFT {
     rarity?: string;
     views: number;
     likes: number;
+    properties?: { trait_type: string; value: string }[];
+}
+
+interface Property {
+    trait_type: string;
+    value: string;
 }
 
 interface ErrorMessages {
@@ -79,7 +85,27 @@ export default function AdminNfts({ nfts, categories, artists = [], blockchains 
         rarity: '',
         views: '0',
         likes: '0',
+        properties: [] as Property[],
     });
+
+    const addProperty = () => {
+        setFormData({
+            ...formData,
+            properties: [...formData.properties, { trait_type: '', value: '' }]
+        });
+    };
+
+    const removeProperty = (index: number) => {
+        const newProperties = [...formData.properties];
+        newProperties.splice(index, 1);
+        setFormData({ ...formData, properties: newProperties });
+    };
+
+    const updateProperty = (index: number, field: 'trait_type' | 'value', value: string) => {
+        const newProperties = [...formData.properties];
+        newProperties[index][field] = value;
+        setFormData({ ...formData, properties: newProperties });
+    };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -159,6 +185,7 @@ export default function AdminNfts({ nfts, categories, artists = [], blockchains 
         }
         form.append('views', formData.views);
         form.append('likes', formData.likes);
+        form.append('properties', JSON.stringify(formData.properties));
 
         if (editingId) {
             // For PUT requests with FormData, we need to use POST with _method override
@@ -183,6 +210,7 @@ export default function AdminNfts({ nfts, categories, artists = [], blockchains 
                         rarity: '',
                         views: '0',
                         likes: '0',
+                        properties: [],
                     });
                     setImagePreview(null);
                     setEditingId(null);
@@ -217,6 +245,7 @@ export default function AdminNfts({ nfts, categories, artists = [], blockchains 
                         rarity: '',
                         views: '0',
                         likes: '0',
+                        properties: [],
                     });
                     setImagePreview(null);
                     setErrors({});
@@ -250,6 +279,7 @@ export default function AdminNfts({ nfts, categories, artists = [], blockchains 
             rarity: '',
             views: '0',
             likes: '0',
+            properties: [],
         });
         setImagePreview(null);
         setEditingId(null);
@@ -272,6 +302,7 @@ export default function AdminNfts({ nfts, categories, artists = [], blockchains 
             rarity: nft.rarity || '',
             views: nft.views.toString(),
             likes: nft.likes.toString(),
+            properties: nft.properties || [],
         });
         // Show existing image preview when editing
         if (nft.image_url) {
@@ -360,7 +391,7 @@ export default function AdminNfts({ nfts, categories, artists = [], blockchains 
                                         )}
                                     </div>
                                     <div>
-                                        <label className="text-sm font-medium">Price (ETH)</label>
+                                        <label className="text-sm font-medium">Price</label>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -538,7 +569,15 @@ export default function AdminNfts({ nfts, categories, artists = [], blockchains 
                                         <label className="text-sm font-medium">Blockchain</label>
                                         <select
                                             value={formData.blockchain_id}
-                                            onChange={(e) => setFormData({ ...formData, blockchain_id: e.target.value })}
+                                            onChange={(e) => {
+                                                const selectedId = e.target.value;
+                                                const selectedBlockchain = blockchains.find(b => b.id.toString() === selectedId);
+                                                setFormData({
+                                                    ...formData,
+                                                    blockchain_id: selectedId,
+                                                    blockchain: selectedBlockchain ? selectedBlockchain.name : formData.blockchain
+                                                });
+                                            }}
                                             className="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                                         >
                                             <option value="">Select Blockchain</option>
@@ -560,6 +599,49 @@ export default function AdminNfts({ nfts, categories, artists = [], blockchains 
                                             <option value="inactive">Inactive</option>
                                             <option value="sold">Sold</option>
                                         </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-sm font-medium">Properties</label>
+                                        <button
+                                            type="button"
+                                            onClick={addProperty}
+                                            className="text-sm text-primary hover:underline flex items-center gap-1"
+                                        >
+                                            <FaPlus className="w-3 h-3" /> Add Property
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {formData.properties.map((property, index) => (
+                                            <div key={index} className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Type (e.g. Color)"
+                                                    value={property.trait_type}
+                                                    onChange={(e) => updateProperty(index, 'trait_type', e.target.value)}
+                                                    className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Value (e.g. Blue)"
+                                                    value={property.value}
+                                                    onChange={(e) => updateProperty(index, 'value', e.target.value)}
+                                                    className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeProperty(index)}
+                                                    className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                >
+                                                    <FaTrash className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {formData.properties.length === 0 && (
+                                            <p className="text-sm text-muted-foreground italic">No properties added yet.</p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -623,7 +705,7 @@ export default function AdminNfts({ nfts, categories, artists = [], blockchains 
                                                         className="w-12 h-12 rounded-lg object-cover"
                                                     />
                                                 </td>
-                                                <td className="py-4 px-2 font-semibold text-green-500">{nft.price} ETH</td>
+                                                <td className="py-4 px-2 font-semibold text-green-500">{nft.price}</td>
                                                 <td className="py-4 px-2">{nft.quantity}</td>
                                                 <td className="py-4 px-2 text-sm text-muted-foreground">
                                                     {artists.find(a => a.id === nft.artist_id)?.name || 'Unknown'}

@@ -23,14 +23,14 @@ export default function SupportIndex({ tickets }: Props) {
     return (
         <AppLayout breadcrumbs={[{ title: 'Support Tickets', href: '/support-tickets' }]}>
             <Head title="Support Tickets" />
-            <div className="p-6 space-y-6">
-                <div className="flex items-center justify-between">
+            <div className="p-4 md:p-6 space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Support Tickets</h1>
-                        <p className="text-muted-foreground mt-1">Manage your support requests and inquiries.</p>
+                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Support Tickets</h1>
+                        <p className="text-sm md:text-base text-muted-foreground mt-1">Manage your support requests and inquiries.</p>
                     </div>
-                    <Link href="/support-tickets/create">
-                        <Button className="gap-2">
+                    <Link href="/support-tickets/create" className="w-full md:w-auto">
+                        <Button className="gap-2 w-full md:w-auto">
                             <FaPlus className="w-4 h-4" />
                             Open New Ticket
                         </Button>
@@ -46,9 +46,9 @@ export default function SupportIndex({ tickets }: Props) {
                             <div className="space-y-4">
                                 {tickets.map((ticket) => (
                                     <Link key={ticket.id} href={`/support-tickets/${ticket.id}`}>
-                                        <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer gap-4">
                                             <div>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                     <span className="font-semibold">{ticket.subject}</span>
                                                     <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">{ticket.ticket_unique_id}</span>
                                                 </div>
@@ -56,7 +56,7 @@ export default function SupportIndex({ tickets }: Props) {
                                                     Last updated {ticket.last_updated}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-3 self-start md:self-auto">
                                                 <Badge variant={ticket.priority === 'high' ? 'destructive' : 'secondary'}>
                                                     {ticket.priority}
                                                 </Badge>

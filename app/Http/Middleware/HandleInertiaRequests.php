@@ -54,6 +54,9 @@ class HandleInertiaRequests extends Middleware
                               ->where('is_read', false);
                     })->count()
                 : 0,
+            'settings' => [
+                'eth_to_usd_rate' => \App\Models\Setting::where('key', 'eth_to_usd_rate')->value('value') ?? 2000,
+            ],
         ];
     }
 }

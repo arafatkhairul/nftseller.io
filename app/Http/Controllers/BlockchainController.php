@@ -19,6 +19,7 @@ class BlockchainController extends Controller
                     'id' => $blockchain->id,
                     'name' => $blockchain->name,
                     'logo' => $blockchain->logo ? asset('storage/' . $blockchain->logo) : null,
+                    'exchange_rate' => $blockchain->exchange_rate,
                     'nfts_count' => $blockchain->nfts_count,
                 ];
             });
@@ -33,6 +34,7 @@ class BlockchainController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'exchange_rate' => 'required|numeric|min:0',
         ]);
 
         if ($request->hasFile('logo')) {
@@ -53,6 +55,7 @@ class BlockchainController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'exchange_rate' => 'required|numeric|min:0',
         ]);
 
         if ($request->hasFile('logo')) {

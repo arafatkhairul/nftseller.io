@@ -26,7 +26,7 @@ export default function AdminSettings({ settings }: { settings: Record<string, s
 
     const submitP2pSettings = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('settings.update'), {
+        post(route('admin.settings.update'), {
             preserveScroll: true,
         });
     };
